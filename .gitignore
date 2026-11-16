@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+coverage/
+.vercel
+deploy/api.env
+deploy/.env
+.claude/settings.local.json

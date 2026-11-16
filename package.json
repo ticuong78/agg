@@ -1,0 +1,20 @@
+{
+  "name": "agg",
+  "private": true,
+  "packageManager": "pnpm@12.17.0",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:contracts": "pnpm --filter @agg/contracts build",
+    "dev:api": "pnpm --filter @agg/api dev",
+    "dev:web": "pnpm --filter @agg/web dev",
+    "infra:up": "docker compose up -d postgres",
+    "infra:down": "docker compose down",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. One tool, one bold colour: like single-purpose PDF tools, the page is mostly white and the only
+ * loud thing is the button that does the job. Brand = "flame" (a teacher's red pen, warmer than error red).
+ */
+@theme inline {
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, Consolas, 'Liberation Mono', monospace;
+}
+
+@theme {
+  --color-brand-50: #fdf1ed;
+  --color-brand-100: #fbe0d7;
+  --color-brand-200: #f6bfae;
+  --color-brand-300: #f0997f;
+  --color-brand-400: #ea7553;
+  --color-brand-500: #e4572e;
+  --color-brand-600: #cc4620;
+  --color-brand-700: #a8391a;
+  --color-brand-800: #852e16;
+  --color-brand-900: #642311;
+
+  --color-ink: #1f2430;
+  --color-muted: #5b6475;
+  --color-line: #e3e6ec;
+  --color-canvas: #f6f7f9;
+  --color-ok: #1f7a4d;
+  --color-warn: #a15c00;
+  --color-danger: #c22f2f;
+}
+
+html {
+  color: var(--color-ink);
+  background: white;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Statement preview (react-markdown output). */
+.prose-statement {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.prose-statement p { margin: 0.5rem 0; }
+.prose-statement ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose-statement ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose-statement code { font-family: var(--font-mono); font-size: 0.9em; background: var(--color-canvas); padding: 0.1rem 0.3rem; border-radius: 4px; }
+.prose-statement pre { background: var(--color-canvas); border: 1px solid var(--color-line); border-radius: 8px; padding: 0.75rem; overflow-x: auto; }
+.prose-statement pre code { background: none; padding: 0; }
+.prose-statement table { border-collapse: collapse; margin: 0.5rem 0; }
+.prose-statement th, .prose-statement td { border: 1px solid var(--color-line); padding: 0.25rem 0.5rem; }
+.prose-statement h3 { font-weight: 600; margin-top: 1rem; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise { animation: rise 0.25s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

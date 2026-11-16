@@ -1,0 +1,14 @@
+# Local development only: PostgreSQL for the API.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: agg
+      POSTGRES_PASSWORD: agg
+      POSTGRES_DB: agg
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
