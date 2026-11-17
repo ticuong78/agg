@@ -33,7 +33,7 @@ pnpm infra:up
 cp apps/api/.env.example apps/api/.env
 ```
 
-Trong `apps/api/.env`: điền `JWT_SECRET` (`openssl rand -hex 32`), email của bạn vào `ADMIN_EMAILS`, và `ANTHROPIC_API_KEY` nếu muốn dùng AI (không có key: bộ đọc theo luật vẫn chạy, tính năng AI tắt).
+Trong `apps/api/.env`: điền `JWT_SECRET` (`openssl rand -hex 32`), email của bạn vào `ADMIN_EMAILS`, và `ANTHROPIC_API_KEY` nếu muốn dùng AI (không có key: bộ đọc theo luật vẫn chạy, tính năng AI tắt). Giữ `DB_SYNC=false`: API tự tạo và nâng cấp bảng bằng migration khi khởi động (xem `docs/DEPLOY.md`, "Cơ sở dữ liệu và nâng cấp").
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local
@@ -52,6 +52,16 @@ pnpm dev:web
 ```
 
 Mở http://localhost:3000. Không cấu hình SMTP thì mã đăng nhập được in ra log của API.
+
+Kiểm thử tích hợp (migration, cần Docker; DB tạm ở cổng 55433, dữ liệu chỉ nằm trong bộ nhớ):
+
+```bash
+pnpm infra:test:up
+```
+
+```bash
+pnpm test:integration
+```
 
 ## Kiểm tra
 

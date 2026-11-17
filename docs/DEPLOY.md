@@ -11,7 +11,7 @@ Yêu cầu: VPS Linux có Docker, một tên miền con trỏ về VPS (ví dụ
    - `SMTP_*` (bắt buộc: mã đăng nhập gửi qua email), `MAIL_FROM`, `SALES_NOTIFY_EMAIL`
    - `ANTHROPIC_API_KEY`, các `CLAUDE_*` model
    - Khoá các cổng thanh toán muốn bật
-   - Lần đầu: `DB_SYNC=true` để tạo bảng, sau đó đổi thành `false`.
+   - `DB_SYNC=false` (bắt buộc: production từ chối `DB_SYNC=true`). Bảng do migration tạo, xem mục "Cơ sở dữ liệu và nâng cấp".
 3. Chạy:
 
 ```bash
@@ -20,10 +20,22 @@ POSTGRES_PASSWORD=$(openssl rand -hex 24) API_DOMAIN=api.example.com docker comp
 
 Lưu `POSTGRES_PASSWORD` vào một tệp `.env` cạnh `deploy/docker-compose.yml` để các lần chạy sau dùng lại.
 
-4. Kiểm tra: `curl https://api.example.com/api/health` → `{"ok":true}`.
+4. Kiểm tra: `curl https://api.example.com/api/health` → `{"ok":true}`. Khi khởi động, API tự chạy migration trước khi nhận request.
 5. Sao lưu hằng đêm: thêm `deploy/backup.sh` vào crontab.
 
 Caddy tự lấy chứng chỉ HTTPS, đặt `read_timeout` 5 phút cho tác vụ gợi ý test, và giới hạn kích thước request. API tin đúng 1 proxy (`TRUST_PROXY=1`) để đếm lượt theo IP thật.
+
+## Cơ sở dữ liệu và nâng cấp
+
+Schema đến từ migration trong `apps/api/src/migrations/` (GD-1, ADR 0002), không từ `DB_SYNC`.
+
+- **Khởi động:** API chạy mọi migration còn thiếu trong một transaction, dưới advisory lock của PostgreSQL, trước khi module nào đọc DB. Nhiều tiến trình khởi động cùng lúc thì chờ nhau (tối đa 10 phút). Migration lỗi thì DB giữ nguyên và API dừng, không thử lại.
+- **Nâng cấp:** sao lưu (`deploy/backup.sh`), rồi deploy như bước 3. Không ai chạy SQL bằng tay.
+- **DB đã tạo bằng `DB_SYNC` trước GD-1:** sao lưu, rồi chạy `migration:check` trên một bản sao của DB đó (không phải DB thật). Nếu báo "No changes", deploy: migration đầu (baseline) dùng `IF NOT EXISTS`, nên chỉ ghi nhận là đã chạy, dữ liệu giữ nguyên. Nếu báo khác biệt, dừng lại và viết migration cho phần khác biệt trước.
+- **Lệnh** (chạy trong `apps/api`, đọc `DATABASE_URL` từ môi trường hoặc `.env`): `pnpm migration:show`, `pnpm migration:run`, `pnpm migration:revert` (huỷ migration cuối; baseline không huỷ được), `pnpm migration:check` (báo lỗi khi entity và migration khác nhau).
+- **Đổi schema:** sửa entity, rồi sinh migration trên DB tạm (`pnpm infra:test:up`), không trên DB dev vì DB đó có thể đã chạy `DB_SYNC`: `DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm migration:run`, rồi `DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm migration:generate src/migrations/<tên>`. Thêm migration vào `migrations/index.ts`, chạy `pnpm test:integration`, review SQL trong cùng PR.
+- **Trên VPS:** image production không có `tsx` (devDependency), nên các lệnh `pnpm migration:*` không chạy trong container. Dùng bản đã build: `docker compose -f deploy/docker-compose.yml exec api node dist/migrate.js run` (hoặc `revert`). Thường không cần `run`: API tự chạy migration khi khởi động.
+- **Quay lại:** `migration:revert` (trên VPS: `node dist/migrate.js revert` như trên) cho migration sau baseline; với baseline, khôi phục bản sao lưu.
 
 ## Web trên Vercel
 
@@ -49,4 +61,4 @@ Thử trên sandbox VNPay/MoMo/Stripe test mode trước khi đổi sang khoá t
 - [ ] Xác minh định dạng `.contest` với Themis thật (xem [THEMIS-FORMAT.md](THEMIS-FORMAT.md)).
 - [ ] Nhờ luật sư rà soát trang Quyền riêng tư, Bảo vệ dữ liệu, Điều khoản (tên pháp nhân, địa chỉ, người phụ trách bảo vệ dữ liệu, hồ sơ chuyển dữ liệu ra nước ngoài theo pháp luật hiện hành).
 - [ ] Đăng ký nhận diện thương hiệu / tên miền; thay `GóiĐề` nếu chọn tên khác (`NEXT_PUBLIC_BRAND`).
-- [ ] Tắt `DB_SYNC` sau lần triển khai đầu.
+- [ ] Có bản sao lưu trước lần chạy migration đầu tiên trên production.

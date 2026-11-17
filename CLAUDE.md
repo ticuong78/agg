@@ -10,6 +10,10 @@ pnpm install
 pnpm build:contracts        # trước khi typecheck API/web
 pnpm dev:api | pnpm dev:web
 pnpm typecheck && pnpm test
+pnpm infra:test:up && pnpm test:integration   # migration, DB tạm cổng 55433
+# Sau khi sửa entity: sinh migration trên DB tạm (không dùng DB dev, có thể đã chạy DB_SYNC)
+DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm --filter @agg/api migration:run
+DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm --filter @agg/api migration:generate src/migrations/<tên>
 ```
 
 ## Workflow
@@ -17,7 +21,7 @@ pnpm typecheck && pnpm test
 1. `docs/ai-engineering-playbook.md` là quy trình làm việc (spec, xác minh, review, vùng rủi ro); `docs/session-brief.md` là phạm vi MVP và thứ tự công việc; `docs/adr/` ghi các quyết định kiến trúc. Các tệp này cùng các skill `/spec`, `/review`, `/security-audit` và agent `reviewer`, `security-verifier` trong `.claude/` cũng là quy tắc.
 2. Mọi thay đổi, kể cả tài liệu và công cụ, bắt đầu bằng spec `docs/specs/GD-<n>-<slug>.md` (dùng `/spec`; GD-0 đến GD-8 dành cho các bước của brief); trình bày rồi dừng cho tới khi chủ dự án duyệt.
 3. Assistant không chạy `git add`, `git commit`, `git push`, không tạo branch hay PR: đưa lệnh để chủ dự án tự chạy. Hỏi trước khi thêm hoặc đổi dependency.
-4. Gate trước khi báo xong: `pnpm build:contracts && pnpm typecheck && pnpm test`, kèm dòng tóm tắt kết quả; kiểm tra trên trình duyệt với mọi thứ giáo viên nhìn thấy và nói rõ phần nào chưa kiểm tra.
+4. Gate trước khi báo xong: `pnpm build:contracts && pnpm typecheck && pnpm test` (thêm `pnpm infra:test:up && pnpm test:integration` khi đổi entity hoặc `migrations/**`), kèm dòng tóm tắt kết quả; kiểm tra trên trình duyệt với mọi thứ giáo viên nhìn thấy và nói rõ phần nào chưa kiểm tra.
 5. MVP: không thêm lời gọi AI, prompt hay dependency Anthropic; mọi route chạy được khi không có `ANTHROPIC_API_KEY`.
 6. Không đọc, in hay commit tệp `.env` hoặc khoá; chỉ dùng `.env.example` làm mẫu.
 
@@ -46,4 +50,4 @@ Adapter ở `conversion/infrastructure/claude-*.ts`, model từ `.env`, prompt c
 
 ## Quy ước
 
-TypeScript strict, ESM `.js` suffix trong API, test `node --test` ở `apps/api/test/*.test.ts` (kiểm tra bất biến trên aggregate). Comment giải thích *vì sao*. Chuỗi hiển thị tiếng Việt; code, comment, tài liệu kỹ thuật tiếng Anh hoặc tiếng Việt nhất quán theo tệp.
+TypeScript strict, ESM `.js` suffix trong API, test `node --test` ở `apps/api/test/*.test.ts` (kiểm tra bất biến trên aggregate); test cần DB là `*.integration.test.ts`, chỉ chạy với `TEST_DATABASE_URL` trỏ vào DB tạm. Mọi thay đổi entity đi kèm migration sinh bằng `migration:generate`, thêm vào `migrations/index.ts`; không dùng `DB_SYNC` ngoài DB local dùng một lần. Comment giải thích *vì sao*. Chuỗi hiển thị tiếng Việt; code, comment, tài liệu kỹ thuật tiếng Anh hoặc tiếng Việt nhất quán theo tệp.

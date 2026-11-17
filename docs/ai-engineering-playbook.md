@@ -30,7 +30,7 @@ It applies to everyone who commits to this repository, with or without an AI ass
 | 1. Spec | `docs/specs/GD-<n>-<slug>.md` from the template: outcome, scope, "done when", plan, contracts and configuration, AI (if any), security and data, tests and fixtures, verification. Every change has one, docs and tooling included. GD-0 to GD-8 are the brief's steps. | `agent` (`/spec`, `.claude/skills/spec`) |
 | 2. Plan | The spec's Plan section: files per context, contracts first, dependency direction checked. Wait for approval before the first edit. | `convention` (CLAUDE.md, Workflow) |
 | 3. Implement | One branch per spec: `feat/GD-<n>-<slug>`, `fix/GD-<n>-<slug>`, or `chore/GD-<n>-<slug>` for docs and tooling. Contracts, then API, then web. Tests in the same branch. The assistant does not create branches; Htet does (CLAUDE.md, Workflow). | `convention`; `.claude/settings.json` denies branch creation to the assistant |
-| 4. Verify | `pnpm build:contracts && pnpm typecheck && pnpm test`, then a live check in the browser for anything a teacher sees. | `hook` (`.husky/pre-push`: packages changed since `origin/main` and their dependents; a root-level change runs everything). The hook checks the working tree, not the commits being pushed: push from a clean tree. `CI` is Planned (GD-2) |
+| 4. Verify | `pnpm build:contracts && pnpm typecheck && pnpm test`; a change to an entity or `migrations/**` also runs `pnpm infra:test:up && pnpm test:integration`; then a live check in the browser for anything a teacher sees. | `hook` (`.husky/pre-push`: packages changed since `origin/main` and their dependents; a root-level change runs everything). The hook checks the working tree, not the commits being pushed: push from a clean tree. `CI` is Planned (GD-2) |
 | 5. Commit | Conventional Commits, scope = package or context (`api`, `web`, `contracts`, `shared`, `identity`, `conversion`, `billing`, `growth`, `deploy`, `deps`, `tooling`, `docs`, `ci`; an unknown scope warns). Body lines at most 100 characters. | `hook` (`.husky/commit-msg`, `commitlint.config.cjs`); not in CI |
 | 6. Review | `/review`, then the `reviewer` agent on `origin/main...HEAD`; for risky areas, `security-verifier` too. | `agent` (`.claude/skills/review`, `.claude/agents/*.md`) |
 | 7. Merge | Squash merge after the gate passes. | `convention`: `main` is unprotected (section 12) |
@@ -47,7 +47,8 @@ It applies to everyone who commits to this repository, with or without an AI ass
    - no uploaded original stored on disk or in the database (`convention`; CLAUDE.md data rule 3);
    - new data about a user appears on the privacy page with a retention period, is deleted when it expires, and in `AccountDeleted` when tied to an account (`convention`; CLAUDE.md data rule 4);
    - every route declares `@Access(...)` (`code`: `RequestGuard` refuses undeclared routes);
-   - no entity change without a migration once GD-1 lands (`test` then; today `DB_SYNC` creates the schema).
+   - no entity change without a migration (`test`, run by hand until CI runs it in GD-2: the drift guard in `migrations.integration.test.ts`, `pnpm test:integration`; or `migration:check`);
+   - no `DB_SYNC` in production (`code`: `config/environment.ts` refuses it).
 
 ## 4. AI features in the product
 
@@ -104,8 +105,8 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 3. Uploads and archives: `domain/source-file.ts`, `infrastructure/document-reader.ts`, and the test zip import (GD-5).
 4. Billing and payment webhooks: `apps/api/src/modules/billing/**`.
 5. AI paths: `conversion/infrastructure/claude-*.ts`, `shared/infrastructure/claude.ts`.
-6. Schema and startup: `apps/api/src/app.module.ts`, `apps/api/src/config/environment.ts`, migrations (from GD-1).
-7. Gates and tooling: `.github/workflows/**`, `.husky/**`, `commitlint.config.cjs`, `.claude/**`, `CLAUDE.md`, this file, `docker-compose.yml`, `deploy/**`, `.env.example` files.
+6. Schema and startup: `apps/api/src/app.module.ts`, `apps/api/src/database.ts`, `apps/api/src/config/environment.ts`, `apps/api/src/migrations/**`.
+7. Gates and tooling: `.github/workflows/**`, `.husky/**`, `commitlint.config.cjs`, `.claude/**`, `CLAUDE.md`, this file, `docker-compose.yml`, `docker-compose.test.yml`, `deploy/**`, `.env.example` files.
 
 ## 9. Working with Claude Code
 
@@ -132,7 +133,7 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 
 **Onboarding (15 minutes):**
 1. Read `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/session-brief.md` and this playbook.
-2. Run `pnpm install && pnpm build:contracts && pnpm infra:up`, copy `apps/api/.env.example` to `apps/api/.env` and `apps/web/.env.example` to `apps/web/.env.local`, then `pnpm dev:api` and `pnpm dev:web`. Until GD-1, a local database needs `DB_SYNC=true`.
+2. Run `pnpm install && pnpm build:contracts && pnpm infra:up`, copy `apps/api/.env.example` to `apps/api/.env` and `apps/web/.env.example` to `apps/web/.env.local`, then `pnpm dev:api` and `pnpm dev:web`. The API builds its tables from the migrations at startup (`DB_SYNC=false`). For integration tests: `pnpm infra:test:up && pnpm test:integration`.
 3. If you commit or push from a GUI git client (GitHub Desktop, Sourcetree, an editor started from the Dock), the hooks may not find `node` or `pnpm`. Put the PATH they need in `~/.config/husky/init.sh`, for example `export PATH="/opt/homebrew/bin:$PATH"`.
 4. Open Claude Code in the repository and run `/spec` on a small task.
 
@@ -148,7 +149,7 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 | `.claude/launch.json` | The web dev server for the preview |
 | `.husky/pre-push`, `.husky/commit-msg`, `commitlint.config.cjs` | Local gates (installed by `pnpm install` through `prepare`) |
 | `docs/specs/TEMPLATE.md`, `docs/specs/README.md` | Spec format; `GD-0` records this setup |
-| `docs/adr/0001` | Decision records |
+| `docs/adr/0001`, `0002` | Decision records: records, schema migrations |
 | `docs/security/` | Security audits (created by the first `/security-audit`) |
 
 ## 12. Planned items and open questions
@@ -157,16 +158,15 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 
 | Item | Spec | Owner |
 |---|---|---|
-| Migrations replace `DB_SYNC`; a test fails when entities and migrations differ | GD-1 | Htet Oo Naing |
 | CI: install, build contracts, typecheck, test and migration check on every PR and push to `main` | GD-2 | Htet Oo Naing |
 | MVP off-switch for accounts, billing, growth and AI routes and pages, with a test per route | GD-3 | Htet Oo Naing |
 | Reader fixtures from real exams | GD-4 | Htet Oo Naing (exams from Cường) |
 | Golden-file test per Themis version | GD-8 | Htet Oo Naing (folders from Cường) |
-| Run `commitlint` in CI as well as in the hook; set `HUSKY=0` in CI installs | GD-2 | Htet Oo Naing |
+| Run `commitlint` and `pnpm test:integration` (drift guard) in CI; set `HUSKY=0` in CI installs | GD-2 | Htet Oo Naing |
 | Confirm the `prepare: husky` script is harmless in the Vercel install | first deploy after GD-0 | Htet Oo Naing |
 | Protect `main`: no force push, required CI, squash only, CODEOWNERS for section 8 | needs spec (repo settings) | repository admin, not named yet |
 | Make the repository private until the review findings are fixed (decision 07) | needs decision | repository admin, not named yet |
-| Widen CLAUDE.md's test rule beyond aggregate invariants (integration tests for migrations and routes) | GD-1, GD-3 | Htet Oo Naing |
+| Widen CLAUDE.md's test rule to route tests | GD-3 | Htet Oo Naing |
 | Tests for `external-links.ts` and prompt shape, before AI returns | needs spec | Htet Oo Naing |
 | An architecture test for layers, context direction and facade-only access | needs spec | Htet Oo Naing |
 
@@ -183,3 +183,4 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 | Date | Item | Outcome |
 |---|---|---|
 | 2026-11-17 | v1.0 | Adapted from the OnlineJudge playbook v2.0 for agg: GD spec ids, `@Access` instead of `@Roles`, MVP with AI off. Same day: `husky` pre-push gate and `commitlint` installed; CI still Planned. A senior review (`/review` plus the `reviewer` agent) found 13 should-fix items: settings that did not enforce the stated rules, spec id collisions, a false claim about reader output, guest data and the `AccountDeleted` rule. All were fixed before the first commit (GD-0). |
+| 2026-11-17 | GD-1 | Migrations replace `DB_SYNC`: baseline of 14 tables, startup under an advisory lock, drift guard; `DB_SYNC=true` refused in production. The baseline cannot be reverted. A failed unlock discards the lock's connection instead of pooling it while still locked. |
