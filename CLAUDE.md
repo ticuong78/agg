@@ -12,6 +12,15 @@ pnpm dev:api | pnpm dev:web
 pnpm typecheck && pnpm test
 ```
 
+## Workflow
+
+1. `docs/ai-engineering-playbook.md` là quy trình làm việc (spec, xác minh, review, vùng rủi ro); `docs/session-brief.md` là phạm vi MVP và thứ tự công việc; `docs/adr/` ghi các quyết định kiến trúc. Các tệp này cùng các skill `/spec`, `/review`, `/security-audit` và agent `reviewer`, `security-verifier` trong `.claude/` cũng là quy tắc.
+2. Mọi thay đổi, kể cả tài liệu và công cụ, bắt đầu bằng spec `docs/specs/GD-<n>-<slug>.md` (dùng `/spec`; GD-0 đến GD-8 dành cho các bước của brief); trình bày rồi dừng cho tới khi chủ dự án duyệt.
+3. Assistant không chạy `git add`, `git commit`, `git push`, không tạo branch hay PR: đưa lệnh để chủ dự án tự chạy. Hỏi trước khi thêm hoặc đổi dependency.
+4. Gate trước khi báo xong: `pnpm build:contracts && pnpm typecheck && pnpm test`, kèm dòng tóm tắt kết quả; kiểm tra trên trình duyệt với mọi thứ giáo viên nhìn thấy và nói rõ phần nào chưa kiểm tra.
+5. MVP: không thêm lời gọi AI, prompt hay dependency Anthropic; mọi route chạy được khi không có `ANTHROPIC_API_KEY`.
+6. Không đọc, in hay commit tệp `.env` hoặc khoá; chỉ dùng `.env.example` làm mẫu.
+
 ## Kiến trúc (bắt buộc)
 
 1. Bounded context ở `apps/api/src/modules/<context>` với 4 tầng `domain` / `application` / `infrastructure` / `presentation`. Domain không import NestJS, TypeORM hay infrastructure.
@@ -27,7 +36,7 @@ pnpm typecheck && pnpm test
 1. Mọi route khai báo `@Access(...)`; guard từ chối route không khai báo.
 2. Mọi truy vấn theo id kiểm tra quyền (`Conversion.canBeOpenedBy`); không mở được thì 404.
 3. Không bao giờ lưu tệp gốc tải lên. Không log email đầy đủ, mã đăng nhập, token, khoá truy cập.
-4. Dữ liệu mới về người dùng phải: có trong trang Quyền riêng tư, có thời hạn lưu, và bị xoá trong handler `AccountDeleted` của context đó.
+4. Dữ liệu mới về người dùng phải: có trong trang Quyền riêng tư, có thời hạn lưu, bị xoá khi hết hạn, và bị xoá trong handler `AccountDeleted` của context đó khi gắn với tài khoản.
 5. Thống kê chỉ lưu khi có đồng ý (`analyticsConsent`); lead chỉ xuất CSV người đồng ý tiếp thị (mặc định).
 6. Webhook thanh toán: gateway tự xác thực chữ ký; đơn chỉ được trả một lần, đúng số tiền (`Order.markPaid`).
 
