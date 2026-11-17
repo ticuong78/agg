@@ -1,0 +1,3 @@
+#!/bin/sh
+# commitlint resolves from node_modules/.bin (husky adds it to PATH), so pnpm need not be on PATH in GUI git clients.
+commitlint --edit "$1"

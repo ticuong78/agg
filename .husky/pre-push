@@ -1,0 +1,12 @@
+#!/bin/sh
+# Verification gate: build contracts, then typecheck and test the packages changed since origin/main and their
+# dependents (all packages when origin/main is not available).
+git fetch -q origin main 2>/dev/null || true
+pnpm build:contracts || exit 1
+if git rev-parse --verify origin/main >/dev/null 2>&1; then
+  pnpm --filter "...[origin/main]" typecheck || exit 1
+  pnpm --filter "...[origin/main]" test || exit 1
+else
+  pnpm typecheck || exit 1
+  pnpm test || exit 1
+fi
