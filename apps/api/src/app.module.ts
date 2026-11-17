@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { validateEnvironment } from './config/environment.js';
+import { databaseOptions, openDatabase, retryDatabaseError } from './database.js';
 import { HealthController } from './health.controller.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { ConversionModule } from './modules/conversion/conversion.module.js';
@@ -19,11 +20,15 @@ import { SharedModule } from './shared/shared.module.js';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.getOrThrow<string>('DATABASE_URL'),
+        ...databaseOptions((key) => config.get<string>(key)),
         autoLoadEntities: true,
-        synchronize: config.get('DB_SYNC', 'false') === 'true',
+        // A database that is not up yet is retried; a failed migration is not (it would run again each time).
+        toRetry: retryDatabaseError,
+        retryAttempts: 10,
+        retryDelay: 3000,
       }),
+      // Migrations under a lock, then DB_SYNC on a throwaway local database, before any module reads the database (GD-1).
+      dataSourceFactory: (options) => openDatabase(options!),
     }),
     SharedModule,
     // Bounded contexts. Dependency direction: growth -> billing -> identity; conversion -> billing.

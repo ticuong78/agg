@@ -86,6 +86,10 @@ Sửa mục, giới hạn, mã bài, test (PATCH), sắp xếp bài, thiết l�
 - Bộ đề của khách mở bằng `x-access-key` (chỉ lưu SHA-256); bộ đề của tài khoản mở theo chủ sở hữu. Không mở được thì trả 404 (không lộ sự tồn tại).
 - Webhook thanh toán không có phiên; từng gateway tự xác thực chữ ký (HMAC VNPay/MoMo, chữ ký Stripe trên raw body, API key SePay).
 
+## Cơ sở dữ liệu
+
+Schema đến từ migration trong `apps/api/src/migrations/` (liệt kê trong `index.ts`), không từ `DB_SYNC` ([ADR 0002](adr/0002-schema-migrations.md)). `src/database.ts` mở kết nối và chạy migration còn thiếu dưới advisory lock trước khi module nào đọc DB; migration lỗi thì API dừng, không thử lại. Test `migrations.integration.test.ts` báo lỗi khi entity và migration khác nhau. Lệnh và quy trình nâng cấp: [DEPLOY.md](DEPLOY.md).
+
 ## Lỗi
 
 Domain/application ném `DomainError` (kind → HTTP status, `code` tiếng Anh ổn định, `message` tiếng Việt). `402 payment_required` kèm `details.action = signin | upgrade`: frontend mở hộp thoại "Đăng nhập" hoặc "Nâng cấp" (`components/upgrade.tsx`).
@@ -100,6 +104,5 @@ Domain/application ném `DomainError` (kind → HTTP status, `code` tiếng Anh 
 ## Những gì cố ý chưa làm (để giữ bản lean)
 
 - Hàng đợi phân tán (Redis/BullMQ): một VPS, một tiến trình là đủ ở giai đoạn đầu. Port `JobQueue` đã tách sẵn.
-- Migration TypeORM: lần triển khai đầu dùng `DB_SYNC=true`; trước thay đổi schema tiếp theo nên sinh migration.
 - Gia hạn tự động: VNPay/MoMo/chuyển khoản không hỗ trợ trả định kỳ đơn giản, nên gói là trả trước 1/12 tháng.
 - SSO, API công khai cho gói Doanh nghiệp: hiện là cam kết bán hàng, chưa có code.

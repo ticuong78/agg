@@ -16,7 +16,8 @@ export function checkEnvironment(raw: Env): { env: Env; errors: string[]; warnin
   const env: Env = { ...raw };
   const errors: string[] = [];
   const warnings: string[] = [];
-  const production = env.NODE_ENV === 'production';
+  // Case and spaces ignored, so ' Production' cannot slip past the production-only checks (DB_SYNC, secrets, SMTP).
+  const production = text(env, 'NODE_ENV').toLowerCase() === 'production';
 
   if (!text(env, 'DATABASE_URL')) errors.push('DATABASE_URL is required.');
 
@@ -36,7 +37,9 @@ export function checkEnvironment(raw: Env): { env: Env; errors: string[]; warnin
     for (const key of ['CORS_ORIGINS', 'FRONTEND_URL', 'PUBLIC_API_URL']) {
       if (!text(env, key) || /localhost|127\.0\.0\.1/.test(text(env, key))) warnings.push(`${key} points at localhost in production.`);
     }
-    if (text(env, 'DB_SYNC') === 'true') warnings.push('DB_SYNC=true in production alters the schema at startup. Take a backup before deploying.');
+    if (text(env, 'DB_SYNC') === 'true') {
+      errors.push('DB_SYNC=true is not allowed in production: it alters tables to match the code without review and can drop a column with its data. The schema comes from the migrations, which run at startup (docs/DEPLOY.md).');
+    }
     if (!text(env, 'IP_HASH_SECRET')) warnings.push('IP_HASH_SECRET is not set: addresses are hashed with JWT_SECRET (rotating it resets guest allowances).');
   }
   if (text(env, 'TRUST_PROXY') === 'true') {

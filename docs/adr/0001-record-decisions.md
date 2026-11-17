@@ -9,7 +9,7 @@ The project is built quickly with an AI assistant. Decisions that are not writte
 
 ## Decision
 
-Every decision that constrains future work (a boundary, a storage choice, a security trade-off, a dependency) is recorded here as `NNNN-<slug>.md` with Context, Decision and Consequences. The first ones to write: migrations instead of `DB_SYNC` (GD-1), the MVP off-switch (GD-3), and one Themis settings writer per tested version (GD-8).
+Every decision that constrains future work (a boundary, a storage choice, a security trade-off, a dependency) is recorded here as `NNNN-<slug>.md` with Context, Decision and Consequences. The first ones to write: migrations instead of `DB_SYNC` (GD-1, written as ADR 0002), the MVP off-switch (GD-3), and one Themis settings writer per tested version (GD-8).
 
 ## Consequences
 

@@ -1,0 +1,22 @@
+# Throwaway database for integration tests. Separate project, separate port, data in memory only: tests can never
+# touch the development database (5433) or its data. Port 55433, because OnlineJudge's test stack uses 55432.
+#   pnpm infra:test:up     then   pnpm test:integration
+#   pnpm infra:test:down
+name: agg-test
+
+services:
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: agg
+      POSTGRES_PASSWORD: agg
+      POSTGRES_DB: agg_test
+    ports:
+      - '127.0.0.1:55433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agg -d agg_test']
+      interval: 2s
+      timeout: 3s
+      retries: 30
