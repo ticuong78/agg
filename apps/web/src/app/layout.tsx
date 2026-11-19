@@ -7,7 +7,7 @@ import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { ToastProvider } from '@/components/toast';
 import { UpgradeProvider } from '@/components/upgrade';
-import { BRAND, SITE_URL } from '@/lib/config';
+import { BRAND, MVP, SITE_URL } from '@/lib/config';
 import { SessionProvider } from '@/lib/session';
 import { TrackingProvider } from '@/lib/tracking';
 
@@ -17,7 +17,9 @@ const code = JetBrains_Mono({ subsets: ['latin', 'latin-ext', 'vietnamese'], var
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: `${BRAND} — Chuyển đề lập trình sang Themis (.contest)`, template: `%s | ${BRAND}` },
-  description: 'Tải lên đề bài lập trình (PDF, Word, ảnh, văn bản), AI tách bài, viết lại đề, gợi ý test và xuất tệp .contest dùng ngay trong Themis.',
+  description: MVP
+    ? 'Tải lên đề bài lập trình (PDF có chữ, Word, văn bản), kiểm tra từng bài và xuất tệp .contest dùng ngay trong Themis. Không dùng AI.'
+    : 'Tải lên đề bài lập trình (PDF, Word, ảnh, văn bản), AI tách bài, viết lại đề, gợi ý test và xuất tệp .contest dùng ngay trong Themis.',
   openGraph: { title: `${BRAND} — Đề lập trình vào, Themis ra`, locale: 'vi_VN', type: 'website' },
 };
 

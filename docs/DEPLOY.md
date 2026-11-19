@@ -6,10 +6,10 @@ Yêu cầu: VPS Linux có Docker, một tên miền con trỏ về VPS (ví dụ
 
 1. Sao chép repo lên VPS (ví dụ `/opt/agg`).
 2. Tạo `deploy/api.env` từ `apps/api/.env.example` và điền:
-   - `NODE_ENV=production`, `JWT_SECRET`, `IP_HASH_SECRET` (mỗi cái `openssl rand -hex 32`)
+   - `APP_MODE` (`mvp` mặc định hoặc `full`; xem mục Chế độ MVP), `NODE_ENV=production`, `JWT_SECRET`, `IP_HASH_SECRET` (mỗi cái `openssl rand -hex 32`)
    - `ADMIN_EMAILS`, `FRONTEND_URL=https://<tên miền web>`, `PUBLIC_API_URL=https://api.example.com`, `CORS_ORIGINS=https://<tên miền web>`
-   - `SMTP_*` (bắt buộc: mã đăng nhập gửi qua email), `MAIL_FROM`, `SALES_NOTIFY_EMAIL`
-   - `ANTHROPIC_API_KEY`, các `CLAUDE_*` model
+   - `SMTP_*` (bắt buộc khi `APP_MODE=full`: mã đăng nhập gửi qua email), `MAIL_FROM`, `SALES_NOTIFY_EMAIL`
+   - `ANTHROPIC_API_KEY`, các `CLAUDE_*` model (chỉ dùng khi `APP_MODE=full`; ở chế độ MVP bị bỏ qua)
    - Khoá các cổng thanh toán muốn bật
    - `DB_SYNC=false` (bắt buộc: production từ chối `DB_SYNC=true`). Bảng do migration tạo, xem mục "Cơ sở dữ liệu và nâng cấp".
 3. Chạy:
@@ -24,6 +24,15 @@ Lưu `POSTGRES_PASSWORD` vào một tệp `.env` cạnh `deploy/docker-compose.y
 5. Sao lưu hằng đêm: thêm `deploy/backup.sh` vào crontab.
 
 Caddy tự lấy chứng chỉ HTTPS, đặt `read_timeout` 5 phút cho tác vụ gợi ý test, và giới hạn kích thước request. API tin đúng 1 proxy (`TRUST_PROXY=1`) để đếm lượt theo IP thật.
+
+## Chế độ MVP (`APP_MODE`)
+
+Một công tắc cho mọi thứ ngoài MVP (GD-3, [ADR 0003](adr/0003-mvp-mode-allowlist.md)).
+
+- **`APP_MODE=mvp`** (mặc định khi để trống): chỉ mở đường dành cho khách: tải lên hoặc dán đề, xem lại, xuất `.contest`. Tài khoản, thanh toán và webhook, growth, phần thưởng, quản trị, AI và xuất Word/PDF/Markdown trả 404. AI tắt kể cả khi có `ANTHROPIC_API_KEY`. Không cần `SMTP_HOST`.
+- **`APP_MODE=full`**: mở mọi tính năng như trước GD-3; production khi đó cần `SMTP_HOST`.
+- Giá trị khác (ví dụ `beta`) làm API dừng khi khởi động.
+- **Web:** đặt `NEXT_PUBLIC_APP_MODE` cùng giá trị trên Vercel. Giá trị này được ghi vào bản build, nên đổi chế độ cần deploy lại web. Nếu hai bên lệch nhau, API quyết định: web có thể hiện một nút mà API từ chối, nhưng không bao giờ mở được thứ API đã đóng.
 
 ## Cơ sở dữ liệu và nâng cấp
 
@@ -40,7 +49,7 @@ Schema đến từ migration trong `apps/api/src/migrations/` (GD-1, ADR 0002), 
 ## Web trên Vercel
 
 1. Import repo vào Vercel, **Root Directory = `apps/web`** (Vercel nhận pnpm workspace; `apps/web/vercel.json` đã đặt lệnh build).
-2. Biến môi trường: `NEXT_PUBLIC_API_URL=https://api.example.com`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_BRAND`, `NEXT_PUBLIC_SUPPORT_EMAIL`.
+2. Biến môi trường: `NEXT_PUBLIC_API_URL=https://api.example.com`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_BRAND`, `NEXT_PUBLIC_SUPPORT_EMAIL`, `NEXT_PUBLIC_APP_MODE` (cùng giá trị với `APP_MODE` của API; xem mục Chế độ MVP).
 3. Deploy. Sau đó cập nhật `FRONTEND_URL` và `CORS_ORIGINS` của API cho đúng tên miền web.
 
 ## Cổng thanh toán
@@ -58,6 +67,7 @@ Thử trên sandbox VNPay/MoMo/Stripe test mode trước khi đổi sang khoá t
 
 ## Trước khi mở cho người dùng
 
+- [ ] Ở chế độ MVP: chỉ mở cho người dùng sau khi có trang Quyền riêng tư bản MVP (GD-7). Trang `/privacy` hiện tại vẫn mô tả tài khoản, thanh toán và việc gửi đề cho Anthropic, những thứ MVP không làm.
 - [ ] Xác minh định dạng `.contest` với Themis thật (xem [THEMIS-FORMAT.md](THEMIS-FORMAT.md)).
 - [ ] Nhờ luật sư rà soát trang Quyền riêng tư, Bảo vệ dữ liệu, Điều khoản (tên pháp nhân, địa chỉ, người phụ trách bảo vệ dữ liệu, hồ sơ chuyển dữ liệu ra nước ngoài theo pháp luật hiện hành).
 - [ ] Đăng ký nhận diện thương hiệu / tên miền; thay `GóiĐề` nếu chọn tên khác (`NEXT_PUBLIC_BRAND`).

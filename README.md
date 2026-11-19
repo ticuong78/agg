@@ -6,6 +6,8 @@ Giáo viên tải lên đề bài lập trình (PDF, Word, ảnh, văn bản, ho
 - Đăng nhập (miễn phí, chỉ cần email): đọc ảnh/PDF scan, AI viết lại, gợi ý test, xuất Word/PDF.
 - 3 gói trả phí: **Giáo viên**, **Tổ chuyên môn**, **Doanh nghiệp**; mua thêm credit; kiếm credit qua khảo sát, giới thiệu, góp ý, báo lỗi.
 
+**Chế độ MVP (mặc định, GD-3):** chỉ mở đường dành cho khách: PDF có chữ, Word hoặc văn bản → xem lại → `.contest`. Không tài khoản, không thanh toán, không AI. `APP_MODE=full` (API) và `NEXT_PUBLIC_APP_MODE=full` (web) mở toàn bộ tính năng mô tả ở trên; xem [triển khai](docs/DEPLOY.md).
+
 Tài liệu: [kiến trúc](docs/ARCHITECTURE.md) · [gói và tăng trưởng](docs/PRODUCT.md) · [định dạng Themis](docs/THEMIS-FORMAT.md) · [triển khai](docs/DEPLOY.md).
 
 ## Cấu trúc

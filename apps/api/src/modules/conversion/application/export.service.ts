@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { ExportFormat, ExportFormatInfo } from '@agg/contracts';
+import { ConfigService } from '@nestjs/config';
+import { MvpExportFormats, type ExportFormat, type ExportFormatInfo } from '@agg/contracts';
+import { isMvpMode } from '../../../shared/application/app-mode.js';
 import { EventPublisher } from '../../../shared/application/event-publisher.js';
 import type { Requester } from '../../../shared/application/requester.js';
 import { DomainError } from '../../../shared/domain/domain-error.js';
@@ -18,16 +20,30 @@ export const EXPORT_FORMATS: ExportFormatInfo[] = [
 /** Step 3: free for every format the tier allows. */
 @Injectable()
 export class ExportService {
+  /** The formats this deployment offers: in MVP mode (GD-3) only the Themis contest. */
+  private readonly offered: ExportFormatInfo[];
+
   constructor(
     private readonly conversions: ConversionService,
     private readonly exporters: ExporterRegistry,
     private readonly usage: UsageGateway,
     private readonly events: EventPublisher,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.offered = isMvpMode(config) ? EXPORT_FORMATS.filter((f) => MvpExportFormats.includes(f.format)) : EXPORT_FORMATS;
+  }
+
+  formats(): ExportFormatInfo[] {
+    return this.offered.map((f) => ({ ...f }));
+  }
 
   async export(requester: Requester, id: string, accessKey: string | null, format: ExportFormat): Promise<ExportedFile> {
-    const info = EXPORT_FORMATS.find((f) => f.format === format);
-    if (!info) throw DomainError.validation('export.unknown_format', 'Định dạng xuất không được hỗ trợ.');
+    if (!EXPORT_FORMATS.some((f) => f.format === format)) {
+      throw DomainError.validation('export.unknown_format', 'Định dạng xuất không được hỗ trợ.');
+    }
+    // A known format this deployment does not offer is closed, like a closed route (GD-3).
+    const info = this.offered.find((f) => f.format === format);
+    if (!info) throw DomainError.notFound('feature.off', 'Không tìm thấy trang.');
     const conversion = await this.conversions.open(requester, id, accessKey);
     if (info.requiresAccount) {
       const profile = await this.usage.profile(requester);

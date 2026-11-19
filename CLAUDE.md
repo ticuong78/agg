@@ -41,7 +41,7 @@ DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm --filter @agg/api 
 
 ## Bảo mật và dữ liệu
 
-1. Mọi route khai báo `@Access(...)`; guard từ chối route không khai báo.
+1. Mọi route khai báo `@Access(...)`; guard từ chối route không khai báo. Route thuộc MVP thêm `@Mvp()`; thiếu thì route trả 404 khi `APP_MODE=mvp` (mặc định, GD-3, ADR 0003). Thêm route vào MVP là quyết định sản phẩm: cập nhật danh sách trong `test/mvp-mode.test.ts` và spec.
 2. Mọi truy vấn theo id kiểm tra quyền (`Conversion.canBeOpenedBy`); không mở được thì 404.
 3. Không bao giờ lưu tệp gốc tải lên. Không log email đầy đủ, mã đăng nhập, token, khoá truy cập.
 4. Dữ liệu mới về người dùng phải: có trong trang Quyền riêng tư, có thời hạn lưu, bị xoá khi hết hạn, và bị xoá trong handler `AccountDeleted` của context đó khi gắn với tài khoản.
@@ -54,4 +54,4 @@ Adapter ở `conversion/infrastructure/claude-*.ts`, model từ `.env`, prompt c
 
 ## Quy ước
 
-TypeScript strict, ESM `.js` suffix trong API, test `node --test` ở `apps/api/test/*.test.ts` (kiểm tra bất biến trên aggregate); test cần DB là `*.integration.test.ts`, chỉ chạy với `TEST_DATABASE_URL` trỏ vào DB tạm. Mọi thay đổi entity đi kèm migration sinh bằng `migration:generate`, thêm vào `migrations/index.ts`; không dùng `DB_SYNC` ngoài DB local dùng một lần. Comment giải thích *vì sao*. Chuỗi hiển thị tiếng Việt; code, comment, tài liệu kỹ thuật tiếng Anh hoặc tiếng Việt nhất quán theo tệp.
+TypeScript strict, ESM `.js` suffix trong API, test `node --test` ở `apps/api/test/*.test.ts` (kiểm tra bất biến trên aggregate, và route: guard cùng metadata của controller như `mvp-mode.test.ts`, hoặc qua HTTP với app thật như `mvp-mode.integration.test.ts`, khởi động từ `dist/` vì tsx không sinh metadata cho DI); test cần DB là `*.integration.test.ts`, chỉ chạy với `TEST_DATABASE_URL` trỏ vào DB tạm. Mọi thay đổi entity đi kèm migration sinh bằng `migration:generate`, thêm vào `migrations/index.ts`; không dùng `DB_SYNC` ngoài DB local dùng một lần. Comment giải thích *vì sao*. Chuỗi hiển thị tiếng Việt; code, comment, tài liệu kỹ thuật tiếng Anh hoặc tiếng Việt nhất quán theo tệp.

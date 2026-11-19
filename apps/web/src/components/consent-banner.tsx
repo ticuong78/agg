@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { MVP } from '@/lib/config';
 import { useTracking } from '@/lib/tracking';
 import { Button, Checkbox } from './ui';
 
@@ -18,7 +19,8 @@ export function ConsentBanner() {
 
   // The choice lives in this browser: render nothing on the server.
   useEffect(() => setMounted(true), []);
-  if (!mounted || consent) return null;
+  // GD-3: nothing is tracked in the MVP, so there is nothing to ask.
+  if (MVP || !mounted || consent) return null;
 
   return (
     <div role="dialog" aria-label="Lựa chọn quyền riêng tư" className="animate-rise fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl border border-line bg-white p-5 shadow-2xl">

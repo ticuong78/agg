@@ -48,7 +48,7 @@ Done when:
   `retention.sweeper.ts`, Claude adapters (`claude-smart-reader.ts`, `claude-test-suggester.ts`,
   `claude-section-writer.ts`).
 - Guest plan in `plans.ts`: 5 MB, 1 file, retention 1 day.
-- Missing (as of 17 November 2026, before GD-0 and GD-1; since done: migrations in GD-1, CI in GD-2, git hooks and commitlint, specs and ADR folders, the playbook, `.claude/skills` and `.claude/agents` in GD-0): migrations (schema only with `DB_SYNC=true`), CI, git hooks, commitlint, specs and ADR folders, the
+- Missing (as of 17 November 2026, before GD-0 and GD-1; since done: migrations in GD-1, CI in GD-2, the MVP off-switch (feature flags) in GD-3, git hooks and commitlint, specs and ADR folders, the playbook, `.claude/skills` and `.claude/agents` in GD-0): migrations (schema only with `DB_SYNC=true`), CI, git hooks, commitlint, specs and ADR folders, the
   playbook, `.claude/skills` and `.claude/agents`, feature flags, test zip import, checklist, version picker,
   feedback.
 - The repo is public. Decision 07 recommends making it private until the review findings are fixed.

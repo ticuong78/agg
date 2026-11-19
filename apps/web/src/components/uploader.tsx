@@ -4,13 +4,16 @@ import { FileImage, FileText, FileType2, Lock, Plus, Type, Upload, X } from 'luc
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
+import { MVP } from '@/lib/config';
 import { rememberAccessKey } from '@/lib/guest-keys';
 import { useSession } from '@/lib/session';
 import { useTracking } from '@/lib/tracking';
 import { Button, cx, Textarea } from './ui';
 import { useApiError } from './upgrade';
 
-const ACCEPT = '.pdf,.docx,.txt,.md,.markdown,.html,.htm,.rtf,.tex,.png,.jpg,.jpeg,.webp,.gif';
+// GD-3: the MVP reads text documents only (brief: PDF with text, .docx or text); scans and photos are out.
+const DOCUMENTS = '.pdf,.docx,.txt,.md,.markdown,.html,.htm,.rtf,.tex';
+const ACCEPT = MVP ? DOCUMENTS : `${DOCUMENTS},.png,.jpg,.jpeg,.webp,.gif`;
 const IMAGE = /\.(png|jpe?g|webp|gif)$/i;
 
 function iconFor(name: string) {
@@ -73,7 +76,7 @@ export function Uploader() {
   useEffect(() => {
     const paste = (e: ClipboardEvent) => {
       const images = Array.from(e.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
-      if (images.length && mode === 'files') {
+      if (!MVP && images.length && mode === 'files') {
         add(images.map((f, i) => new File([f], f.name && f.name !== 'image.png' ? f.name : `anh-dan-${Date.now()}-${i}.png`, { type: f.type })));
       }
     };
@@ -95,7 +98,7 @@ export function Uploader() {
   };
 
   const hasImages = files.some((f) => IMAGE.test(f.name));
-  const guestLocked = !user && hasImages;
+  const guestLocked = !MVP && !user && hasImages;
   const allowance = usage?.guest;
 
   return (
@@ -118,7 +121,7 @@ export function Uploader() {
             Chọn tệp đề bài
           </Button>
           <p className="text-sm text-muted">hoặc thả tệp vào đây · hoặc <button className="font-medium text-brand-600 underline-offset-2 hover:underline" onClick={() => setMode('text')}>dán nội dung đề</button></p>
-          <p className="text-xs text-muted">PDF, Word (.docx), văn bản (.txt, .md, .html, .rtf), ảnh chụp đề (PNG, JPG)</p>
+          <p className="text-xs text-muted">{MVP ? 'PDF có chữ, Word (.docx), văn bản (.txt, .md, .html, .rtf)' : 'PDF, Word (.docx), văn bản (.txt, .md, .html, .rtf), ảnh chụp đề (PNG, JPG)'}</p>
         </div>
       )}
 
@@ -132,7 +135,7 @@ export function Uploader() {
                   <Icon className="size-8 shrink-0 text-brand-500" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium" title={file.name}>{file.name}</p>
-                    <p className="text-xs text-muted">{size(file.size)}{IMAGE.test(file.name) && !user ? ' · cần đăng nhập' : ''}</p>
+                    <p className="text-xs text-muted">{size(file.size)}{IMAGE.test(file.name) ? (MVP ? ' · chưa hỗ trợ ảnh' : !user ? ' · cần đăng nhập' : '') : ''}</p>
                   </div>
                   <button onClick={() => setFiles((f) => f.filter((_, j) => j !== i))} aria-label={`Bỏ ${file.name}`} className="rounded-md p-1 text-muted hover:bg-canvas">
                     <X className="size-4" />

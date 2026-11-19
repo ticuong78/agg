@@ -85,6 +85,7 @@ Sửa mục, giới hạn, mã bài, test (PATCH), sắp xếp bài, thiết l�
 - Mọi request có `Requester`: tài khoản (Bearer JWT) hoặc khách (`x-visitor-id` + IP đã băm HMAC).
 - Bộ đề của khách mở bằng `x-access-key` (chỉ lưu SHA-256); bộ đề của tài khoản mở theo chủ sở hữu. Không mở được thì trả 404 (không lộ sự tồn tại).
 - Webhook thanh toán không có phiên; từng gateway tự xác thực chữ ký (HMAC VNPay/MoMo, chữ ký Stripe trên raw body, API key SePay).
+- **Chế độ MVP** (GD-3, [ADR 0003](adr/0003-mvp-mode-allowlist.md)): khi `APP_MODE=mvp` (mặc định), cùng guard đó trả 404 `feature.off` cho mọi route **không** có `@Mvp()`, và coi mọi người gọi là khách (không xét token đăng nhập). Route mới vì vậy đóng trong MVP cho tới khi được đánh dấu. `@Mvp()` chỉ thu hẹp: route vẫn cần `@Access`. Cũng ở chế độ này, `ExportService` chỉ cho xuất `contest` (`MvpExportFormats` trong contracts), và `ClaudeClient` tắt dù có key. Web đọc `NEXT_PUBLIC_APP_MODE`: `proxy.ts` (Proxy của Next 16, trước gọi là Middleware) trả 404 cho trang ngoài MVP, và các thành phần không gọi route đã đóng.
 
 ## Cơ sở dữ liệu
 

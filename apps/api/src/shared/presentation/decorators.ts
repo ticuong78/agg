@@ -13,6 +13,14 @@ export const ACCESS = 'agg:access';
 export type AccessLevel = 'guest' | 'user' | 'admin' | 'webhook';
 export const Access = (level: AccessLevel) => SetMetadata(ACCESS, level);
 
+export const MVP = 'agg:mvp';
+/**
+ * GD-3: marks a route that belongs to the MVP. With APP_MODE=mvp (the default) the global guard answers 404 for
+ * every route without it, so a new endpoint stays closed in the MVP until it is opted in. It only narrows: the
+ * route still needs its `@Access` level. Put it on the handler, or on a controller whose every route is MVP.
+ */
+export const Mvp = () => SetMetadata(MVP, true);
+
 /** Injects the requester (set by the guard). */
 export const CurrentRequester = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): Requester => ctx.switchToHttp().getRequest().requester,

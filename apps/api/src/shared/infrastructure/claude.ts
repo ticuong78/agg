@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ConfigService } from '@nestjs/config';
+import { isMvpMode } from '../application/app-mode.js';
 
 /** Model per task, from the environment. No model name is hard-coded anywhere else. */
 export interface ClaudeModels {
@@ -14,7 +15,7 @@ export interface ClaudeModels {
 }
 
 /**
- * Shared access to the Claude API for the AI adapters. Disabled when ANTHROPIC_API_KEY is not configured:
+ * Shared access to the Claude API for the AI adapters. Disabled in MVP mode and when ANTHROPIC_API_KEY is not set:
  * the adapters then report themselves unavailable and the product falls back (rule-based parser) or
  * says the feature is off, never crashes.
  */
@@ -40,7 +41,8 @@ export class ClaudeClient {
 }
 
 export function createClaudeClient(config: ConfigService): ClaudeClient {
-  const apiKey = config.get<string>('ANTHROPIC_API_KEY');
+  // GD-3: the MVP has no AI, so a key set by mistake must not switch it on (uploads then use the rule-based reader).
+  const apiKey = isMvpMode(config) ? undefined : config.get<string>('ANTHROPIC_API_KEY');
   const main = config.get<string>('CLAUDE_MODEL') || 'claude-sonnet-5-5';
   return new ClaudeClient(apiKey ? new Anthropic({ apiKey, maxRetries: 2 }) : null, {
     reader: main,

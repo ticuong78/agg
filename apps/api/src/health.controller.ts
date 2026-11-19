@@ -1,8 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { Access } from './shared/presentation/decorators.js';
+import { Access, Mvp } from './shared/presentation/decorators.js';
 
 @Controller('health')
 @Access('guest')
+@Mvp()
 export class HealthController {
   @Get()
   health() {

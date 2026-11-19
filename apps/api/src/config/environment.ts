@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
+import { AppModes, parseAppMode } from '@agg/contracts';
 
 export type Env = Record<string, unknown>;
 
@@ -21,6 +22,11 @@ export function checkEnvironment(raw: Env): { env: Env; errors: string[]; warnin
 
   if (!text(env, 'DATABASE_URL')) errors.push('DATABASE_URL is required.');
 
+  // GD-3: unset means the MVP, so forgetting the variable can never open the full product.
+  const mode = parseAppMode(text(env, 'APP_MODE'));
+  if (!mode) errors.push(`APP_MODE must be one of: ${AppModes.join(', ')} (unset means mvp).`);
+  const full = mode === 'full';
+
   const secret = text(env, 'JWT_SECRET');
   if (!secret) {
     if (production) errors.push('JWT_SECRET is required in production (openssl rand -hex 32).');
@@ -33,7 +39,8 @@ export function checkEnvironment(raw: Env): { env: Env; errors: string[]; warnin
   }
 
   if (production) {
-    if (!text(env, 'SMTP_HOST')) errors.push('SMTP_HOST is required in production: sign-in codes are sent by e-mail.');
+    // Sign-in codes exist only with accounts, which the MVP closes.
+    if (full && !text(env, 'SMTP_HOST')) errors.push('SMTP_HOST is required in production with APP_MODE=full: sign-in codes are sent by e-mail.');
     for (const key of ['CORS_ORIGINS', 'FRONTEND_URL', 'PUBLIC_API_URL']) {
       if (!text(env, key) || /localhost|127\.0\.0\.1/.test(text(env, key))) warnings.push(`${key} points at localhost in production.`);
     }
@@ -45,7 +52,8 @@ export function checkEnvironment(raw: Env): { env: Env; errors: string[]; warnin
   if (text(env, 'TRUST_PROXY') === 'true') {
     errors.push('TRUST_PROXY=true trusts X-Forwarded-For from anyone; set the number of proxies instead (e.g. TRUST_PROXY=1).');
   }
-  if (!text(env, 'ANTHROPIC_API_KEY')) warnings.push('ANTHROPIC_API_KEY is not set: AI features are off, documents are read by the rule-based parser.');
+  if (mode === 'mvp') warnings.push('APP_MODE is mvp: only the guest path is open, and AI is off even if ANTHROPIC_API_KEY is set.');
+  else if (full && !text(env, 'ANTHROPIC_API_KEY')) warnings.push('ANTHROPIC_API_KEY is not set: AI features are off, documents are read by the rule-based parser.');
   return { env, errors, warnings };
 }
 
