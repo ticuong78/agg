@@ -16,7 +16,8 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U agg -d agg_test']
+      # TCP, not the socket: the first-boot init server answers on the socket only, before the real server starts.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U agg -d agg_test']
       interval: 2s
       timeout: 3s
       retries: 30

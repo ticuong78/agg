@@ -65,6 +65,8 @@ pnpm test:integration
 
 ## Kiểm tra
 
+CI (`.github/workflows/ci.yml`, job `verify`) chạy `pnpm build:contracts`, `pnpm typecheck`, `pnpm test`, kiểm thử tích hợp và `migration:check` trên mọi PR và mọi lần push lên `main`; commitlint (các commit và tiêu đề PR) chỉ chạy trên PR.
+
 ```bash
 pnpm build:contracts && pnpm typecheck && pnpm test
 ```
