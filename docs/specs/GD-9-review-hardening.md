@@ -1,6 +1,6 @@
 # GD-9: Fixes from the engineering-manager review (secret scanning, permission rules, process rules)
 
-Status: done, pending the PR's first run (approved by Htet Oo Naing 2026-11-17; implemented 2026-11-19); amended after a second review and approved again the same day ("Amend GD-9"). The amendment is the **Amendment** section below; where it and the original Scope differ, the amendment wins.
+Status: done (approved by Htet Oo Naing 2026-11-17; implemented 2026-11-19; first green run on PR #4); amended after a second review and approved again the same day ("Amend GD-9"). The amendment is the **Amendment** section below; where it and the original Scope differ, the amendment wins.
 Owner: Htet Oo Naing
 Risky area: yes. **This changes CI** (`.github/workflows/ci.yml`) and `.claude/settings.json`, `CLAUDE.md` and the playbook (playbook section 8).
 MVP: in (tooling; no product change)
@@ -179,7 +179,13 @@ No product tests. The scan has its own regression harness, `.github/scripts/secr
 - **Mutation check** (two approved runs against copies in the scratchpad): the harness catches both original bugs when they are put back.
   - The commit-message pipe: 28 of 29, "secret in a commit message" passed. Exit 1.
   - A plain `rev-list` count: 24 of 29. Pure rename, binary added, mode only, binary deleted and empty commit falsely failed. Exit 1.
-- **Not checked:** the first run of `Secrets`, `Secret scan tests` and `pr-text` on GitHub, which happens on this PR.
+- **First run on GitHub** (PR #4, 2026-11-19): all checks passed.
+  - `verify` passed in 55 s (run 44507018785), and every step ran.
+  - `Secrets` scanned 1 commit; history, messages and files were clean.
+  - `Secret scan tests` ran because this PR changes `.github/scripts/`: 29 of 29 cases as expected, in about 11 s on the runner.
+  - `pr-text` passed in 18 s (run 44507018899): the title and description were clean, and the title passed commitlint.
+  - GitGuardian passed.
+  - Not yet seen: a push run on `main` (on merge), and `pr-text` re-running on an edit.
 
 - **Settings review (18 Nov), fixed:**
   - Key files are refused for reading. `CLAUDE.md` rule 6 covers keys, but only `.env` files were denied before. The new rules cover `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa*`, `id_ed25519*` and `.env.staging`, for both Read and Bash. A Read of `probe.pem` is refused, and `.env.example` still reads.
