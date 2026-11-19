@@ -4,9 +4,9 @@ name: ci
 
 on:
   pull_request:
-    # edited: a changed PR title is checked again (it becomes the commit on main with squash merge, once the squash
-    # default message is "Pull request title", playbook section 12).
-    types: [opened, synchronize, reopened, edited]
+    # Code events only, so `verify` is always a real run. The PR title and description, which can change without a
+    # new commit, are checked by pr-text.yml (GD-9): a skipped job would report Success even as a required check.
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
 
@@ -44,10 +44,37 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history on pull requests, so commitlint can read every commit in the PR.
-          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # Full history, so commitlint and the secret scan can read every commit in the PR or push (and the whole
+          # history after a force push). The repository is small.
+          fetch-depth: 0
           # No later step needs git auth, so the token is not left on disk for PR code to read.
           persist-credentials: false
+
+      # Secrets (GD-9): gitleaks, pinned by digest, over every commit in the PR or push (merges included), their
+      # messages, and the checked-out tree, before anything is installed. The script fails closed and never prints a
+      # value or an author's email; it runs the same way locally (docs/specs/GD-9-review-hardening.md).
+      - name: Secrets
+        env:
+          GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f # v8.30.1
+          FROM: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          TO: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }}
+        shell: bash
+        run: bash .github/scripts/secret-scan.sh range "$FROM" "$TO"
+
+      # The scan's own regression tests (GD-9), when the scan or a workflow (where the gitleaks digest lives) changes.
+      # A diff that git cannot compute (new branch, force push) runs them too.
+      - name: Secret scan tests
+        env:
+          GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f # v8.30.1
+          FROM: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          TO: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }}
+        shell: bash
+        run: |
+          if git diff --quiet "$FROM" "$TO" -- .github/scripts .github/workflows 2>/dev/null; then
+            echo "The scan and the workflows are unchanged; tests skipped."
+          else
+            bash .github/scripts/secret-scan.test.sh
+          fi
       # pnpm version from package.json "packageManager" (pnpm 12 needs v6.1.0 or later).
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -57,20 +84,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Commit messages: every commit in the PR, and the title as it lands on main with squash merge (with " (#N)"), so
-      # a title that only fits without the suffix fails here rather than on main. The title is what lands only when the
-      # repository's squash default message is "Pull request title" (playbook section 12).
-      # All come from the event through env, never pasted into the script, so a crafted title cannot run commands.
+      # Commit messages: every commit in the PR. The PR title is linted by pr-text.yml. The SHAs come from the event
+      # through env, never pasted into the script.
       - name: Commit messages
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
-          printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | pnpm exec commitlint --verbose
+        run: pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
       - run: pnpm build:contracts
       - run: pnpm typecheck

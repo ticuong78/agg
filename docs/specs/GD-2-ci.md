@@ -72,6 +72,25 @@ No new test files: CI runs the existing suites (`pnpm test`: 35 tests; `pnpm tes
 - Risk: GitHub's runner image changes under `ubuntu-latest`; pinned to `ubuntu-24.04` instead (an OnlineJudge lesson).
 - Rollback: revert the workflow file.
 
+## Measures (back-filled by GD-9 on 19 Nov, from the session transcript and GitHub)
+
+- Elapsed: about 42 h, from approval (17 Nov 12:37 UTC) to the merge of PR #3 (19 Nov 06:52 UTC). The work was done on 17 Nov. The wait was for Htet's review rounds and the push. The PR itself took 6 minutes from opening to merge, with `verify` passing in 54 s.
+- Review findings before merge, by round:
+  - 1st: `reviewer` and `security-verifier`, 0 blocking, 6 should fix and 3 nits.
+  - 2nd: 0 blocking, 2 should fix and 5 nits.
+  - 3rd: 2 nits.
+  - 4th: 2 should fix (in the handover commands) and 1 nit.
+- Escaped defects: 3, all found after the first report of done and before merge.
+  - The concurrency group could drop a queued commit on `main`.
+  - The squash-title claim depended on a setting nobody had made.
+  - The branch name `ci/…` in the handover commands broke the playbook's naming rule.
+
+  The first two are also counted in round 2, and the third in round 4. None was found after merge.
+- Htet's attention: about 35 minutes, estimated (four review requests, two shipping attempts, the merge).
+- Deviations from the spec: none.
+- Rule breaches: 1, disclosed at the time. `pnpm exec commitlint` was run from a script file while `pnpm exec` was refused. GD-9 makes the rule explicit: ask, never go around it.
+- Merged with a merge commit, not a squash: the admin settings (playbook section 12) are not set yet.
+
 ## Verification (2026-11-17)
 
 - **Pinned SHAs** (`gh api`, checked again by the security verifier with `compare`, identical to the tags): `actions/checkout` v7.0.1 `3d3c42e5…` (released 2026-07-20), `pnpm/action-setup` v6.1.1 `73e46992…` (2026-11-03; pnpm 12 support since v6.1.0 per its release notes), `actions/setup-node` v7.1.0 `949feb24…` (2026-10-08).
@@ -91,6 +110,9 @@ No new test files: CI runs the existing suites (`pnpm test`: 35 tests; `pnpm tes
   - The commitlint range uses `base.sha`. It is harmless while `main` holds only squash commits.
   - pnpm comes from `pnpm/action-setup`, not corepack. The first PR run tests this. The fallback is `version: 12.17.0` or running `setup-node` first.
   - An `edited` event on the PR description re-runs the job. GD-9 C covers it.
+- **Third and fourth reviews (19 Nov):**
+  - 3rd: 2 nits. `ci.yml` line 7 and spec scope item 7 still stated the squash-title claim without its condition. Both fixed.
+  - 4th: 2 should fix and 1 nit. The handover branch name `ci/GD-2-ci` broke the playbook's naming rule, so Htet used `chore/GD-2-ci`. The PR body now lists the admin's settings. Pushing from a tree that wasn't clean was accepted, because the extra files were docs and settings only.
 - **Not done, recorded:** the Postgres image follows its tag, not a digest (a test database should get patches); `packageManager` has no `+sha512` hash; a stale `unrs-resolver` entry in `pnpm-workspace.yaml`'s build allowlist (pre-existing).
 - **First run on GitHub** (PR #3, run 44474519577, 2026-11-19): `verify` passed in 54 s, and every step ran.
   - `pnpm/action-setup` v6.1.1 installed pnpm v12.17.0 from `packageManager`, so no fallback was needed.

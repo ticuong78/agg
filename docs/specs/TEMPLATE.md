@@ -46,6 +46,15 @@ API test files to add or change and the cases they cover. Fixtures (real exams w
 
 Order of merges, data backfill, what to watch after deploy, how to roll back. Parser changes to port to OnlineJudge.
 
+## Measures (filled when done)
+
+- Elapsed: approval to merge (hours or days).
+- Review findings before merge: blocking / should fix / nits, from `/review`, `reviewer` and `security-verifier`.
+- Escaped defects: problems found after the assistant reported done or after merge (CI, GitGuardian, a person), with one line each. A finding from a review after "done" counts here and in the review findings above.
+- Htet's attention: estimated minutes (reading, deciding, running git).
+- Deviations from the approved spec: each one, and whether it was asked before or disclosed after.
+- Rule breaches (`CLAUDE.md`, `.claude/settings.json`), such as running a refused command through a script: each one, and when it was disclosed.
+
 ## Verification (filled when done)
 
 Gate summary lines (`pnpm build:contracts && pnpm typecheck && pnpm test`), other commands run, browser checks done, and what was not checked.

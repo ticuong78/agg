@@ -45,6 +45,14 @@ No product tests. Checked by hand: commitlint on sample messages, the pre-push s
 
 GUI git clients may not find `node` or `pnpm`; the playbook's onboarding says how to fix it. The `prepare` script runs during the Vercel install; husky exits 0 without `.git`, to confirm on the first deploy.
 
+## Measures (back-filled by GD-9 on 19 Nov, from the session transcript and GitHub)
+
+- Elapsed: about 2 h 20 min, from the brief arriving (17 Nov 07:46 UTC) to the merge of PR #1 (10:07 UTC). No separate approval time was recorded.
+- Review findings before merge: 0 blocking, 13 should fix (`/review` plus `reviewer`), all fixed before the first commit.
+- Escaped defects: 1. The second review (17 Nov, 13:15 UTC) found that `.claude/settings.json` blocked legitimate commands and left write paths open (`gh api -X`, `git -C … commit`). This is fixed in GD-9.
+- Htet's attention: about 25 minutes, estimated (approving the dependencies, the review round, setting up SSH for the push, the merge).
+- Deviations from the spec: none recorded.
+
 ## Verification
 
 - Gate: build:contracts OK; typecheck `Done` for contracts, api, web; `tests 31, pass 31, fail 0`.
