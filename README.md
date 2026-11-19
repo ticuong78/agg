@@ -65,7 +65,7 @@ pnpm test:integration
 
 ## Kiểm tra
 
-CI (`.github/workflows/ci.yml`, job `verify`) chạy `pnpm build:contracts`, `pnpm typecheck`, `pnpm test`, kiểm thử tích hợp và `migration:check` trên mọi PR và mọi lần push lên `main`; commitlint (các commit và tiêu đề PR) chỉ chạy trên PR.
+CI (`.github/workflows/ci.yml`, job `verify`) quét secret bằng gitleaks (mọi commit, nội dung commit và cây tệp), rồi chạy `pnpm build:contracts`, `pnpm typecheck`, `pnpm test`, kiểm thử tích hợp và `migration:check` trên mọi PR và mọi lần push lên `main`; commitlint trên các commit chỉ chạy trên PR. `.github/workflows/pr-text.yml` (job `pr-text`) kiểm tra tiêu đề PR bằng commitlint và quét secret trong tiêu đề, mô tả PR, chạy lại khi chúng được sửa.
 
 ```bash
 pnpm build:contracts && pnpm typecheck && pnpm test

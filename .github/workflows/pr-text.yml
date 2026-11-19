@@ -1,0 +1,53 @@
+# GD-9: the PR's title and description, which can change without a new commit. Kept apart from ci.yml so that editing
+# the description never re-runs, cancels or skips `verify` (a skipped job reports Success, even as a required check).
+# Runs on code events too, because a required check must report on every new head commit.
+name: pr-text
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+# Read-only, no secrets, pull_request only (never pull_request_target): the same rules as ci.yml.
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-text-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-text:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      HUSKY: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The title and description are read from the event file, never pasted into a script, so crafted text cannot run
+      # commands; a file, not env, because a long description could pass Linux's 128 KiB limit for one variable.
+      - name: Secrets in the title and description
+        env:
+          GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f # v8.30.1
+        # `shell: bash` adds pipefail, so a failed jq fails the step instead of scanning empty input.
+        shell: bash
+        run: |
+          jq -r '.pull_request.title + "\n\n" + (.pull_request.body // "")' "$GITHUB_EVENT_PATH" |
+            bash .github/scripts/secret-scan.sh stdin
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The title as it lands on main with squash merge, " (#N)" included, once the squash default message is
+      # "Pull request title" (playbook section 12): a title that fits only without the suffix fails here.
+      - name: Title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | pnpm exec commitlint --verbose

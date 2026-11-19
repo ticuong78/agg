@@ -69,6 +69,16 @@ No routes. Migrations run as the app's database user, with no new credentials. T
 
 Rollback: `migration:revert` for later migrations; for the baseline, restore the backup.
 
+## Measures (back-filled by GD-9 on 19 Nov, from the session transcript and GitHub)
+
+- Elapsed: about 1 h 50 min, from approval (17 Nov 10:38 UTC) to the merge of PR #2 (12:27 UTC).
+- Review findings before merge: 0 blocking, 4 should fix and 7 nits (`reviewer`). `security-verifier` found nothing of high severity.
+- Escaped defects: 2.
+  - The lock leak, found by a review after the first report of done: a failed unlock returned a connection to the pool that still held the lock. It was fixed with a test that failed before the fix.
+  - A fake `JWT_SECRET` literal in a test, flagged by GitGuardian on the PR. Neither review agent had noticed it. Htet squashed and force-pushed, and the test now generates the value at run time.
+- Htet's attention: about 30 minutes, estimated (approval, two rounds of fixes, the GitGuardian rewrite and force push, the merge).
+- Deviations from the spec: 1, disclosed after. The baseline migration was changed to refuse revert without asking first. This led to GD-9's deviation rule.
+
 ## Verification (2026-11-17)
 
 - **Gate:** `pnpm build:contracts` OK; `pnpm typecheck` Done for contracts, api, web; `pnpm test` tests 35, pass 35, fail 0 (database-free: integration files are excluded from `test`).
