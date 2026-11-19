@@ -1,0 +1,90 @@
+# GD-2: the remote gate. The same commands as the pre-push hook, plus the migration drift guard (GD-1) against a real
+# Postgres and commit-message checks. Runs every step locally the same way: see docs/specs/GD-2-ci.md.
+name: ci
+
+on:
+  pull_request:
+    # edited: a changed PR title is checked again (it becomes the commit on main with squash merge, once the squash
+    # default message is "Pull request title", playbook section 12).
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+# Read-only: the workflow uses no secrets, and runs from forks get nothing more (pull_request, never pull_request_target).
+permissions:
+  contents: read
+
+concurrency:
+  # One group per PR, so a newer push supersedes the older run. One group per commit on main, because a group keeps only
+  # one pending run and would drop a queued main commit whatever cancel-in-progress says.
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  # Only a superseded PR run is cancelled; every commit on main keeps its result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    # Pinned image: ubuntu-latest can move under us (an OnlineJudge lesson).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      # The prepare script would install git hooks; CI has no use for them.
+      HUSKY: '0'
+    services:
+      # Same port, binding and credentials as docker-compose.test.yml, so `pnpm test:integration` runs unchanged.
+      # The image follows the 17-alpine tag (not a digest): a database that lives for one job should get patches.
+      postgres-test:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: agg
+          POSTGRES_PASSWORD: agg
+          POSTGRES_DB: agg_test
+        ports: ['127.0.0.1:55433:5432']
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U agg -d agg_test" --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history on pull requests, so commitlint can read every commit in the PR.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # No later step needs git auth, so the token is not left on disk for PR code to read.
+          persist-credentials: false
+      # pnpm version from package.json "packageManager" (pnpm 12 needs v6.1.0 or later).
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Commit messages: every commit in the PR, and the title as it lands on main with squash merge (with " (#N)"), so
+      # a title that only fits without the suffix fails here rather than on main. The title is what lands only when the
+      # repository's squash default message is "Pull request title" (playbook section 12).
+      # All come from the event through env, never pasted into the script, so a crafted title cannot run commands.
+      - name: Commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+          printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | pnpm exec commitlint --verbose
+
+      - run: pnpm build:contracts
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # The drift guard and the rest of the migration suite (GD-1), against the service above.
+      - run: pnpm test:integration
+
+      # The same check from the command line: apply the migrations, then fail if the entities still differ.
+      - name: Migration check
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://agg:agg@127.0.0.1:55433/agg_test
+          DB_SYNC: 'false'
+        run: |
+          pnpm migration:run
+          pnpm migration:check

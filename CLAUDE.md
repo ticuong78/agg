@@ -24,6 +24,7 @@ DATABASE_URL=postgres://agg:agg@127.0.0.1:55433/agg_test pnpm --filter @agg/api 
 4. Gate trước khi báo xong: `pnpm build:contracts && pnpm typecheck && pnpm test` (thêm `pnpm infra:test:up && pnpm test:integration` khi đổi entity hoặc `migrations/**`), kèm dòng tóm tắt kết quả; kiểm tra trên trình duyệt với mọi thứ giáo viên nhìn thấy và nói rõ phần nào chưa kiểm tra.
 5. MVP: không thêm lời gọi AI, prompt hay dependency Anthropic; mọi route chạy được khi không có `ANTHROPIC_API_KEY`.
 6. Không đọc, in hay commit tệp `.env` hoặc khoá; chỉ dùng `.env.example` làm mẫu.
+7. CI (`.github/workflows/ci.yml`, job `verify`) chạy gate, test migration và commitlint trên mọi PR; chỉ merge khi `verify` xanh. Đổi CI cần spec ghi rõ là đổi CI; action ghim theo SHA, không dùng `pull_request_target`, không đưa `${{ }}` từ PR vào script.
 
 ## Kiến trúc (bắt buộc)
 

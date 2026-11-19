@@ -1,6 +1,6 @@
 # GóiĐề (agg) AI Engineering Playbook
 
-Version 1.0, 17 November 2026. Adapted from the OnlineJudge playbook v2.0 (16 November 2026). Owner: Htet Oo Naing. Repository admin: not named yet (section 12).
+Version 1.1, 17 November 2026 (1.0 the same day). Adapted from the OnlineJudge playbook v2.0 (16 November 2026). Owner: Htet Oo Naing. Repository admin: the owner of `ticuong78/agg`.
 It applies to everyone who commits to this repository, with or without an AI assistant.
 
 ## 1. Purpose and change control
@@ -18,7 +18,7 @@ It applies to everyone who commits to this repository, with or without an AI ass
 
 1. **Spec before code.** A change starts as a short spec with "done when" criteria. The assistant implements the spec, not a chat message.
 2. **The repository teaches the assistant.** Rules, commands and forbidden patterns live in `CLAUDE.md`, so every session starts with the same constraints.
-3. **Nothing merges unverified.** The full gate runs before saying a step is done, and a filtered gate runs before every push (hook, which `--no-verify` or `HUSKY=0` can skip). There is no CI yet (GD-2, section 12).
+3. **Nothing merges unverified.** The full gate runs before saying a step is done, a filtered gate runs before every push (hook, which `--no-verify` or `HUSKY=0` can skip), and CI runs the full gate and the migration suite on every PR and push to `main`, and commitlint on every PR (`.github/workflows/ci.yml`, GD-2). CI is not yet a required check, because `main` is unprotected (section 12): do not merge a PR whose `verify` check is red.
 4. **You own what you merge.** The PR author can explain how the change works, why this approach was chosen, and what can break. Code that nobody can explain does not merge.
 5. **Risky areas get a second pair of eyes,** human and agent (section 8).
 6. **The MVP is the product until the pilot says otherwise.** Anything outside the MVP scope (accounts, billing, growth, AI) stays off and is not extended without a spec that says why.
@@ -30,15 +30,15 @@ It applies to everyone who commits to this repository, with or without an AI ass
 | 1. Spec | `docs/specs/GD-<n>-<slug>.md` from the template: outcome, scope, "done when", plan, contracts and configuration, AI (if any), security and data, tests and fixtures, verification. Every change has one, docs and tooling included. GD-0 to GD-8 are the brief's steps. | `agent` (`/spec`, `.claude/skills/spec`) |
 | 2. Plan | The spec's Plan section: files per context, contracts first, dependency direction checked. Wait for approval before the first edit. | `convention` (CLAUDE.md, Workflow) |
 | 3. Implement | One branch per spec: `feat/GD-<n>-<slug>`, `fix/GD-<n>-<slug>`, or `chore/GD-<n>-<slug>` for docs and tooling. Contracts, then API, then web. Tests in the same branch. The assistant does not create branches; Htet does (CLAUDE.md, Workflow). | `convention`; `.claude/settings.json` denies branch creation to the assistant |
-| 4. Verify | `pnpm build:contracts && pnpm typecheck && pnpm test`; a change to an entity or `migrations/**` also runs `pnpm infra:test:up && pnpm test:integration`; then a live check in the browser for anything a teacher sees. | `hook` (`.husky/pre-push`: packages changed since `origin/main` and their dependents; a root-level change runs everything). The hook checks the working tree, not the commits being pushed: push from a clean tree. `CI` is Planned (GD-2) |
-| 5. Commit | Conventional Commits, scope = package or context (`api`, `web`, `contracts`, `shared`, `identity`, `conversion`, `billing`, `growth`, `deploy`, `deps`, `tooling`, `docs`, `ci`; an unknown scope warns). Body lines at most 100 characters. | `hook` (`.husky/commit-msg`, `commitlint.config.cjs`); not in CI |
+| 4. Verify | `pnpm build:contracts && pnpm typecheck && pnpm test`; a change to an entity or `migrations/**` also runs `pnpm infra:test:up && pnpm test:integration`; then a live check in the browser for anything a teacher sees. | `hook` (`.husky/pre-push`: packages changed since `origin/main` and their dependents; a root-level change runs everything). The hook checks the working tree, not the commits being pushed: push from a clean tree. `CI` (`verify` job: all packages, `pnpm test:integration` against Postgres 17, `migration:run` then `migration:check`) |
+| 5. Commit | Conventional Commits, scope = package or context (`api`, `web`, `contracts`, `shared`, `identity`, `conversion`, `billing`, `growth`, `deploy`, `deps`, `tooling`, `docs`, `ci`; an unknown scope warns). Body lines at most 100 characters. | `hook` (`.husky/commit-msg`, `commitlint.config.cjs`); `CI` on pull requests: every commit in the PR and the PR title, linted with its ` (#N)` suffix so it stays within the 100-character header limit. The title is the commit on `main` only once the squash default message is "Pull request title" (section 12); until then a one-commit PR lands as its commit subject plus ` (#N)`, which CI lints without the suffix |
 | 6. Review | `/review`, then the `reviewer` agent on `origin/main...HEAD`; for risky areas, `security-verifier` too. | `agent` (`.claude/skills/review`, `.claude/agents/*.md`) |
 | 7. Merge | Squash merge after the gate passes. | `convention`: `main` is unprotected (section 12) |
 | 8. Audit | `/security-audit` after a change in a risky area and monthly; findings become specs. | `agent` (`.claude/skills/security-audit`); records in `docs/security/` |
 
 **Definition of done (every PR):**
 1. The spec's "done when" list holds, and its status is `done`. (`convention`)
-2. The gate passes locally (and in CI once GD-2 lands). (`hook`)
+2. The gate passes locally and the `verify` check is green on the PR. (`hook` runs the gate before push; `CI` runs it on the PR; merging only on green is `convention` until `verify` is a required check, section 12)
 3. New behaviour has tests in `apps/api/test/`; a bug fix has a test that failed before the fix. A change to the reader (`exam-parser.ts`, `document-reader.ts`) keeps or adds a fixture per real exam. (`convention`; `/review` checks it)
 4. Contracts (`packages/contracts`), `docs/ARCHITECTURE.md`, `docs/THEMIS-FORMAT.md`, `docs/DEPLOY.md` and `README.md` are updated when routes, formats or behaviour change. (`convention`)
 5. A parser change is noted in the PR for porting to OnlineJudge's `exam-parser.ts`, so the two copies do not drift. (`convention`)
@@ -47,7 +47,7 @@ It applies to everyone who commits to this repository, with or without an AI ass
    - no uploaded original stored on disk or in the database (`convention`; CLAUDE.md data rule 3);
    - new data about a user appears on the privacy page with a retention period, is deleted when it expires, and in `AccountDeleted` when tied to an account (`convention`; CLAUDE.md data rule 4);
    - every route declares `@Access(...)` (`code`: `RequestGuard` refuses undeclared routes);
-   - no entity change without a migration (`test`, run by hand until CI runs it in GD-2: the drift guard in `migrations.integration.test.ts`, `pnpm test:integration`; or `migration:check`);
+   - no entity change without a migration (detected by `test` and `CI`: the drift guard in `migrations.integration.test.ts` and `migration:check`, both run by the `verify` job; not merge-blocking until `verify` is required);
    - no `DB_SYNC` in production (`code`: `config/environment.ts` refuses it).
 
 ## 4. AI features in the product
@@ -158,14 +158,14 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 
 | Item | Spec | Owner |
 |---|---|---|
-| CI: install, build contracts, typecheck, test and migration check on every PR and push to `main` | GD-2 | Htet Oo Naing |
 | MVP off-switch for accounts, billing, growth and AI routes and pages, with a test per route | GD-3 | Htet Oo Naing |
 | Reader fixtures from real exams | GD-4 | Htet Oo Naing (exams from Cường) |
 | Golden-file test per Themis version | GD-8 | Htet Oo Naing (folders from Cường) |
-| Run `commitlint` and `pnpm test:integration` (drift guard) in CI; set `HUSKY=0` in CI installs | GD-2 | Htet Oo Naing |
+| Keep the pinned action SHAs in `ci.yml` current (Dependabot or a monthly check), with a reviewer for each bump | needs spec | Htet Oo Naing |
+| Build the web app and the API Docker image in CI, if a build breaks unnoticed | needs spec | Htet Oo Naing |
 | Confirm the `prepare: husky` script is harmless in the Vercel install | first deploy after GD-0 | Htet Oo Naing |
-| Protect `main`: no force push, required CI, squash only, CODEOWNERS for section 8 | needs spec (repo settings) | repository admin, not named yet |
-| Make the repository private until the review findings are fixed (decision 07) | needs decision | repository admin, not named yet |
+| Protect `main`: no force push, `verify` as a required check, squash only, CODEOWNERS for section 8. Steps for the admin: Settings, Branches (or Rules), add a rule for `main`, require the status check `verify`, require a pull request, block force pushes, allow squash merge only; under General, Pull Requests, set the squash default commit message to "Pull request title" (GitHub's default uses the commit subject for one-commit PRs); under Actions, require approval before running workflows from outside contributors (a fork's PR runs its own edited `ci.yml`) | repository settings, no code | repository admin (`ticuong78`) |
+| Make the repository private until the review findings are fixed (decision 07) | needs decision | repository admin (`ticuong78`) |
 | Widen CLAUDE.md's test rule to route tests | GD-3 | Htet Oo Naing |
 | Tests for `external-links.ts` and prompt shape, before AI returns | needs spec | Htet Oo Naing |
 | An architecture test for layers, context direction and facade-only access | needs spec | Htet Oo Naing |
@@ -175,7 +175,7 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 | Question | Owner |
 |---|---|
 | Which obligations of Law 91/2025 apply to guest uploads that contain student names? | Htet Oo Naing, with legal advice |
-| Who is the second human reviewer for risky areas, and who is the repository admin? | Htet Oo Naing |
+| Who is the second human reviewer for risky areas? | Htet Oo Naing |
 | Will AI return after the pilot, and under which data terms? | Htet Oo Naing, after the pilot |
 
 ## History
@@ -184,3 +184,4 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 |---|---|---|
 | 2026-11-17 | v1.0 | Adapted from the OnlineJudge playbook v2.0 for agg: GD spec ids, `@Access` instead of `@Roles`, MVP with AI off. Same day: `husky` pre-push gate and `commitlint` installed; CI still Planned. A senior review (`/review` plus the `reviewer` agent) found 13 should-fix items: settings that did not enforce the stated rules, spec id collisions, a false claim about reader output, guest data and the `AccountDeleted` rule. All were fixed before the first commit (GD-0). |
 | 2026-11-17 | GD-1 | Migrations replace `DB_SYNC`: baseline of 14 tables, startup under an advisory lock, drift guard; `DB_SYNC=true` refused in production. The baseline cannot be reverted. A failed unlock discards the lock's connection instead of pooling it while still locked. |
+| 2026-11-17 | v1.1 (GD-2) | CI added: one `verify` job on every PR and push to `main` (gate, migration suite against Postgres 17, `migration:check`, commitlint on commits and the PR title), actions pinned by SHA, read-only permissions. Not yet a required check. |
