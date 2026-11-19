@@ -41,8 +41,14 @@ export class TypeOrmConversionRepository extends ConversionRepository {
     return rows.map((row) => Conversion.restore({ ...row }));
   }
 
+  async insert(conversion: Conversion) {
+    await this.repo.insert(withoutNul(conversion.snapshot()) as never);
+  }
+
   async save(conversion: Conversion) {
-    await this.repo.save(this.repo.create(conversion.snapshot()));
+    // UPDATE, never upsert: if the row is gone, nothing is written (GD-7).
+    const { id, ...fields } = withoutNul(conversion.snapshot());
+    await this.repo.update({ id }, fields as never);
   }
 
   async delete(id: string) {
@@ -60,4 +66,17 @@ export class TypeOrmConversionRepository extends ConversionRepository {
   async failInterrupted(reason: string) {
     return (await this.repo.update({ status: 'PROCESSING' }, { status: 'FAILED', failure: reason })).affected ?? 0;
   }
+}
+
+/**
+ * PostgreSQL text and jsonb cannot hold U+0000. Exam text read from a PDF, or sent by a client, may contain it, and
+ * the failed write would then be logged with its parameters. Removed from every string before a set is stored.
+ */
+function withoutNul<T>(value: T): T {
+  if (typeof value === 'string') return value.replace(/\u0000/g, '') as T;
+  if (Array.isArray(value)) return value.map(withoutNul) as T;
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withoutNul(v)])) as T;
+  }
+  return value;
 }

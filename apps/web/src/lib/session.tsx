@@ -4,7 +4,7 @@ import { CreditCosts, TierCatalog, type MeDto, type UsageDto } from '@agg/contra
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import { MVP } from './config';
-import { forgetAccessKey, guestConversionIds } from './guest-keys';
+import { forgetAccessKey, guestConversionIds, pruneAccessKeys } from './guest-keys';
 import { getToken, setToken } from './token';
 
 interface Session {
@@ -39,6 +39,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    pruneAccessKeys();
     (async () => {
       if (MVP) {
         setUsage(MVP_GUEST_USAGE);

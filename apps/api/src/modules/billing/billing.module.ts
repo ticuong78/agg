@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdentityModule } from '../identity/identity.module.js';
 import { AccountResolver } from './application/account-resolver.js';
 import { BillingFacade } from './application/billing.facade.js';
+import { UsageSweeper } from './application/usage.sweeper.js';
 import { CheckoutService } from './application/checkout.service.js';
 import { Fulfilment } from './application/fulfilment.js';
 import { BillingErasure } from './application/account-erasure.js';
@@ -30,6 +31,7 @@ import { BillingController, PaymentWebhooksController, WorkspaceController } fro
     AccountResolver,
     BillingFacade,
     UsageService,
+    UsageSweeper,
     CheckoutService,
     WorkspaceService,
     Fulfilment,

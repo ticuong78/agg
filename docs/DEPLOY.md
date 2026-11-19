@@ -21,7 +21,9 @@ POSTGRES_PASSWORD=$(openssl rand -hex 24) API_DOMAIN=api.example.com docker comp
 Lưu `POSTGRES_PASSWORD` vào một tệp `.env` cạnh `deploy/docker-compose.yml` để các lần chạy sau dùng lại.
 
 4. Kiểm tra: `curl https://api.example.com/api/health` → `{"ok":true}`. Khi khởi động, API tự chạy migration trước khi nhận request.
-5. Sao lưu hằng đêm: thêm `deploy/backup.sh` vào crontab.
+5. Sao lưu hằng đêm: thêm `deploy/backup.sh` vào crontab. Bản sao lưu giữ 14 ngày và không chứa dữ liệu sống ngắn hơn thế (GD-7): bộ đếm lượt (`daily_usage`) luôn bị bỏ ra; bộ đề (`conversions`) bị bỏ ra khi API đang chạy ở chế độ MVP. Script hỏi chế độ từ container `api`, nếu API không chạy thì đọc `deploy/api.env`; giá trị lạ thì dừng và không sao lưu (cron sẽ báo). Nhật ký mọi container xoay vòng theo dung lượng (3 tệp × 10 MB, `deploy/docker-compose.yml`), và Caddy xoá IP cùng mọi header (khoá mở bộ đề, mã trình duyệt) khỏi nhật ký của nó (`deploy/Caddyfile`).
+   - **Đánh đổi:** không có nhật ký từng yêu cầu (không access log, không IP), nên sau một sự cố không truy được ai đã gửi gì. Khi có sự cố, chụp lại ngay `docker compose -f deploy/docker-compose.yml logs` trước khi nhật ký bị ghi đè.
+6. **Nâng cấp lên GD-7 trên VPS đang chạy:** `docker compose -f deploy/docker-compose.yml up -d` để áp dụng xoay vòng nhật ký và bộ lọc nhật ký của Caddy. Các bản sao lưu tạo trước GD-7 vẫn chứa bộ đề: chúng tự hết hạn sau 14 ngày, hoặc xoá tay `/var/backups/agg/agg-*.dump` cũ.
 
 Caddy tự lấy chứng chỉ HTTPS, đặt `read_timeout` 5 phút cho tác vụ gợi ý test, và giới hạn kích thước request. API tin đúng 1 proxy (`TRUST_PROXY=1`) để đếm lượt theo IP thật.
 
@@ -67,7 +69,7 @@ Thử trên sandbox VNPay/MoMo/Stripe test mode trước khi đổi sang khoá t
 
 ## Trước khi mở cho người dùng
 
-- [ ] Ở chế độ MVP: chỉ mở cho người dùng sau khi có trang Quyền riêng tư bản MVP (GD-7). Trang `/privacy` hiện tại vẫn mô tả tài khoản, thanh toán và việc gửi đề cho Anthropic, những thứ MVP không làm.
+- [x] Ở chế độ MVP: trang Quyền riêng tư bản MVP (GD-7) đã có; mọi thời hạn trên trang lấy từ `Retention` trong `plans.ts` và có test đối chiếu với `deploy/`.
 - [ ] Xác minh định dạng `.contest` với Themis thật (xem [THEMIS-FORMAT.md](THEMIS-FORMAT.md)).
 - [ ] Nhờ luật sư rà soát trang Quyền riêng tư, Bảo vệ dữ liệu, Điều khoản (tên pháp nhân, địa chỉ, người phụ trách bảo vệ dữ liệu, hồ sơ chuyển dữ liệu ra nước ngoài theo pháp luật hiện hành).
 - [ ] Đăng ký nhận diện thương hiệu / tên miền; thay `GóiĐề` nếu chọn tên khác (`NEXT_PUBLIC_BRAND`).

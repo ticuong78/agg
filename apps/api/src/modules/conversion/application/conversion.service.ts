@@ -110,7 +110,7 @@ export class ConversionService implements OnApplicationBootstrap {
       sources: sources.map((s) => ({ name: s.file.name, kind: s.kind, sizeBytes: s.file.buffer.length, pages: s.pages })),
       retentionDays: profile.limits.retentionDays,
     });
-    await this.conversions.save(conversion);
+    await this.conversions.insert(conversion);
     this.jobs.enqueue(() => this.extract(conversion.id, requester, profile, sources, imagePages), profile.features.priorityQueue);
     return { conversion: toConversionDto(conversion), accessKey };
   }

@@ -2,10 +2,21 @@
 # Usage (from the repository root):
 #   cp apps/api/.env.example deploy/api.env   # then fill it in
 #   API_DOMAIN=api.example.com docker compose -f deploy/docker-compose.yml up -d --build
+
+# GD-7: every container's log is rotated by size, then overwritten, as the privacy page says (Retention.logFiles and
+# Retention.logFileMb in packages/contracts/src/plans.ts; privacy-promises.test.ts checks they match). The API logs
+# no IP, browser id or exam text, and Caddy writes no access log.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: agg
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -21,6 +32,7 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile.api
     restart: unless-stopped
+    logging: *logging
     env_file: api.env
     environment:
       DATABASE_URL: postgres://agg:${POSTGRES_PASSWORD}@postgres:5432/agg
@@ -33,6 +45,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     ports:
       - "80:80"
       - "443:443"
