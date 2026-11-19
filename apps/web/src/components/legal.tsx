@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { MVP } from '@/lib/config';
 
 export const LEGAL_UPDATED = '16/11/2026';
 
-const PAGES = [
-  ['/privacy', 'Quyền riêng tư'],
-  ['/data-protection', 'Bảo vệ dữ liệu'],
-  ['/terms', 'Điều khoản'],
-] as const;
+// GD-3: in the MVP only the privacy page is open; terms and data protection describe accounts, credit and AI.
+const PAGES: readonly (readonly [string, string])[] = MVP
+  ? [['/privacy', 'Quyền riêng tư']]
+  : [
+      ['/privacy', 'Quyền riêng tư'],
+      ['/data-protection', 'Bảo vệ dữ liệu'],
+      ['/terms', 'Điều khoản'],
+    ];
 
 export function LegalPage({ title, intro, current, toc, children }: {
   title: string; intro: ReactNode; current: string; toc: [string, string][]; children: ReactNode;

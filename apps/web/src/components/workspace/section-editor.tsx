@@ -3,6 +3,7 @@
 import { CreditCosts, type TextSection } from '@agg/contracts';
 import { Check, Pencil, X } from 'lucide-react';
 import { useState } from 'react';
+import { MVP } from '@/lib/config';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 import { Markdown } from '../markdown';
@@ -77,7 +78,7 @@ export function SectionEditor({ conversionId, problemId, section, label, value, 
       ) : value.trim() ? (
         multiline ? <Markdown>{value}</Markdown> : <p>{value}</p>
       ) : (
-        <p className="text-sm italic text-muted">(Trống — bấm Sửa hoặc để AI viết)</p>
+        <p className="text-sm italic text-muted">{MVP ? '(Trống — bấm Sửa)' : '(Trống — bấm Sửa hoặc để AI viết)'}</p>
       )}
 
       {proposal && (

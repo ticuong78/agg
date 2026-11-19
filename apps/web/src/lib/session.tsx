@@ -1,8 +1,9 @@
 'use client';
 
-import type { MeDto, UsageDto } from '@agg/contracts';
+import { CreditCosts, TierCatalog, type MeDto, type UsageDto } from '@agg/contracts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
+import { MVP } from './config';
 import { forgetAccessKey, guestConversionIds } from './guest-keys';
 import { getToken, setToken } from './token';
 
@@ -18,17 +19,32 @@ interface Session {
 
 const SessionContext = createContext<Session | null>(null);
 
+/**
+ * GD-3: in the MVP there are no accounts and the billing routes are closed, so the guest's limits come straight from
+ * the guest plan in plans.ts. The API enforces the same plan; the daily count is not shown.
+ */
+const MVP_GUEST_USAGE: UsageDto = {
+  tier: 'GUEST', tierName: TierCatalog.GUEST.name, credits: 0, buckets: [],
+  limits: TierCatalog.GUEST.limits, features: TierCatalog.GUEST.features, costs: CreditCosts,
+  guest: null, plan: null, workspace: null,
+};
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<MeDto | null>(null);
   const [usage, setUsage] = useState<UsageDto | null>(null);
 
   const refreshUsage = useCallback(async () => {
-    setUsage(await api.usage().catch(() => null));
+    setUsage(MVP ? MVP_GUEST_USAGE : await api.usage().catch(() => null));
   }, []);
 
   useEffect(() => {
     (async () => {
+      if (MVP) {
+        setUsage(MVP_GUEST_USAGE);
+        setReady(true);
+        return;
+      }
       if (getToken()) {
         const me = await api.me().catch(() => null);
         if (!me) setToken(null);

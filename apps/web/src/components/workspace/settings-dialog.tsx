@@ -4,6 +4,7 @@ import type { ConversionDto, IoMode } from '@agg/contracts';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { MVP } from '@/lib/config';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 import { Dialog } from '../dialog';
@@ -45,11 +46,12 @@ export function SettingsDialog({ open, onClose, conversion, onSaved }: {
             <option value="STDIO">Bàn phím / màn hình</option>
           </Select>
         </Field>
-        <Field label="Tiêu đề in trên đề" hint={branding ? 'Ví dụ: Trường THPT Chuyên A — Tổ Tin học' : undefined}>
+        {/* GD-3: branding is a paid feature; the MVP has no plans, so the field is not shown at all. */}
+        {!MVP && <Field label="Tiêu đề in trên đề" hint={branding ? 'Ví dụ: Trường THPT Chuyên A — Tổ Tin học' : undefined}>
           {branding
             ? <Input value={header} onChange={(e) => setHeader(e.target.value)} maxLength={200} />
             : <p className="flex items-center gap-2 rounded-lg bg-canvas p-3 text-sm text-muted"><Lock className="size-4" /> Có từ gói <Link href="/pricing" className="font-medium text-brand-600 underline">Tổ chuyên môn</Link>.</p>}
-        </Field>
+        </Field>}
         <Button onClick={save} loading={busy} className="w-full">Lưu</Button>
       </div>
     </Dialog>

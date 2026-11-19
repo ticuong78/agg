@@ -13,6 +13,7 @@ import { SettingsDialog } from '@/components/workspace/settings-dialog';
 import { Stepper } from '@/components/workspace/stepper';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/lib/session';
+import { MVP } from '@/lib/config';
 
 const PROCESSING_TIPS = [
   'Đang đọc tài liệu…',
@@ -86,7 +87,7 @@ export default function ConversionPage() {
       <div className="mx-auto max-w-md px-4 py-24 text-center">
         <FileWarning className="mx-auto size-12 text-muted" />
         <h1 className="mt-4 text-2xl font-bold">Không tìm thấy bộ đề</h1>
-        <p className="mt-2 text-muted">Bộ đề đã hết hạn lưu, đã bị xoá, hoặc được mở từ trình duyệt khác. Đăng nhập để giữ bộ đề lâu hơn.</p>
+        <p className="mt-2 text-muted">Bộ đề đã hết hạn lưu, đã bị xoá, hoặc được mở từ trình duyệt khác.{MVP ? '' : ' Đăng nhập để giữ bộ đề lâu hơn.'}</p>
         <ButtonLink href="/" className="mt-6">Chuyển bộ đề mới</ButtonLink>
       </div>
     );

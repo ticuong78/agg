@@ -4,6 +4,7 @@ import type { TrackEvent } from '@agg/contracts';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
+import { MVP } from './config';
 import { getConsent, getVisitorId, saveConsent, type Consent } from './visitor';
 
 interface Tracking {
@@ -31,12 +32,14 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const track = useCallback((name: string, props?: TrackEvent['props']) => {
+    if (MVP) return; // GD-3: no tracking in the MVP; the growth routes are closed.
     queue.current.push({ name, path: window.location.pathname, props });
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(flush, 1500);
   }, [flush]);
 
   const decide = useCallback((analytics: boolean, marketing: boolean) => {
+    if (MVP) return;
     const value = saveConsent({ analytics, marketing });
     setConsent(value);
     const visitorId = getVisitorId();
@@ -46,9 +49,11 @@ export function TrackingProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({ consent, decide, track }), [consent, decide, track]);
   return (
     <TrackingContext.Provider value={value}>
-      <Suspense fallback={null}>
-        <PageViews consent={consent} track={track} />
-      </Suspense>
+      {!MVP && (
+        <Suspense fallback={null}>
+          <PageViews consent={consent} track={track} />
+        </Suspense>
+      )}
       {children}
     </TrackingContext.Provider>
   );

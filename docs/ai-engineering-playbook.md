@@ -1,6 +1,6 @@
 # GóiĐề (agg) AI Engineering Playbook
 
-Version 1.2, 19 November 2026 (1.0 and 1.1 on 17 November). Adapted from the OnlineJudge playbook v2.0 (16 November 2026). Owner: Htet Oo Naing. Repository admin: the owner of `ticuong78/agg`.
+Version 1.3, 19 November 2026 (1.0 and 1.1 on 17 November, 1.2 on 19 November). Adapted from the OnlineJudge playbook v2.0 (16 November 2026). Owner: Htet Oo Naing. Repository admin: the owner of `ticuong78/agg`.
 It applies to everyone who commits to this repository, with or without an AI assistant.
 
 ## 1. Purpose and change control
@@ -55,6 +55,7 @@ It applies to everyone who commits to this repository, with or without an AI ass
    - no uploaded original stored on disk or in the database (`convention`; CLAUDE.md data rule 3);
    - new data about a user appears on the privacy page with a retention period, is deleted when it expires, and in `AccountDeleted` when tied to an account (`convention`; CLAUDE.md data rule 4);
    - every route declares `@Access(...)` (`code`: `RequestGuard` refuses undeclared routes);
+   - in MVP mode (`APP_MODE=mvp`, the default) only routes marked `@Mvp()` answer; every other route is a 404, so a new route stays closed in the MVP until opted in (`code`: `RequestGuard`; `test`: `mvp-mode.test.ts` pins the list of MVP routes, `mvp-mode.integration.test.ts` and `full-mode.integration.test.ts` call every live route over HTTP, one mode each; ADR 0003);
    - no entity change without a migration (detected by `test` and `CI`: the drift guard in `migrations.integration.test.ts` and `migration:check`, both run by the `verify` job; not merge-blocking until `verify` is required);
    - no `DB_SYNC` in production (`code`: `config/environment.ts` refuses it).
 7. The spec's Measures section is filled: elapsed time, review findings, escaped defects, Htet's minutes, deviations. (`convention`)
@@ -176,7 +177,6 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 
 | Item | Spec | Owner |
 |---|---|---|
-| MVP off-switch for accounts, billing, growth and AI routes and pages, with a test per route | GD-3 | Htet Oo Naing |
 | Reader fixtures from real exams | GD-4 | Htet Oo Naing (exams from Cường) |
 | Golden-file test per Themis version | GD-8 | Htet Oo Naing (folders from Cường) |
 | Keep the pinned action SHAs in `ci.yml` current (Dependabot or a monthly check), with a reviewer for each bump | needs spec | Htet Oo Naing |
@@ -186,7 +186,6 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 | Turn on GitHub secret scanning and push protection (free for public repositories): the only scanner here that a PR cannot edit, since `verify` and `pr-text` run the PR's own copy of the workflows and script | repository settings, no code | repository admin (`ticuong78`) |
 | CODEOWNERS for `/.github/**`, `/.gitleaks.toml`, `/.gitleaksignore` and the section 8 paths, with review from code owners required | needs spec (after a second human reviewer is named) | Htet Oo Naing, with the admin |
 | Make the repository private until the review findings are fixed (decision 07) | needs decision | repository admin (`ticuong78`) |
-| Widen CLAUDE.md's test rule to route tests | GD-3 | Htet Oo Naing |
 | Tests for `external-links.ts` and prompt shape, before AI returns | needs spec | Htet Oo Naing |
 | An architecture test for layers, context direction and facade-only access | needs spec | Htet Oo Naing |
 
@@ -206,3 +205,4 @@ A change in any of these paths needs the `security-verifier` agent and a human r
 | 2026-11-17 | GD-1 | Migrations replace `DB_SYNC`: baseline of 14 tables, startup under an advisory lock, drift guard; `DB_SYNC=true` refused in production. The baseline cannot be reverted. A failed unlock discards the lock's connection instead of pooling it while still locked. |
 | 2026-11-17 | v1.1 (GD-2) | CI added: one `verify` job on every PR and push to `main` (gate, migration suite against Postgres 17, `migration:check`, commitlint on commits and the PR title), actions pinned by SHA, read-only permissions. Not yet a required check. |
 | 2026-11-19 | v1.2 (GD-9) | Secret scanning in CI: gitleaks pinned by digest over every commit with merges, the messages and the tree (`verify`), and the PR title and description (new `pr-text` workflow, so a description edit never skips or cancels `verify`). The scan fails closed when gitleaks scans a different number of commits than git counts, and ignores repository config so a PR cannot switch it off. A committed regression harness for the scan, which caught both original bugs when they were put back. Layered enforcement and the honest limit of the assistant's rules written down; deviation rule, pre-handover scan and Measures added. |
+| 2026-11-19 | v1.3 (GD-3) | MVP mode, on by default: one `APP_MODE` setting closes accounts, billing, growth, rewards, admin, AI and statement exports in the API (404) and the web. Routes opt in with `@Mvp()` (ADR 0003). Route tests now exist: a unit test pins the 11 MVP routes, and two integration tests (one per mode) boot the compiled app and call all 46 routes. In MVP mode every caller is a guest. CLAUDE.md's test rule covers routes. |

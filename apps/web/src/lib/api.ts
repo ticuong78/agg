@@ -8,7 +8,7 @@ import {
   type SuggestTestsResponse, type SurveyRequest, type TrackEvent, type UpdateProblemRequest, type UpdateSettingsRequest,
   type UsageDto, type VerifyCodeRequest, type VisitRequest, type WorkspaceDto,
 } from '@agg/contracts';
-import { API_URL } from './config';
+import { API_URL, MVP } from './config';
 import { accessKeyFor } from './guest-keys';
 import { getToken } from './token';
 import { getVisitorId } from './visitor';
@@ -42,7 +42,8 @@ interface Options {
 function headers(conversionId?: string, json = true): Record<string, string> {
   const h: Record<string, string> = {};
   if (json) h['Content-Type'] = 'application/json';
-  const token = getToken();
+  // GD-3: no accounts in the MVP; an old token in this browser is not sent (the API would ignore it anyway).
+  const token = MVP ? null : getToken();
   if (token) h.Authorization = `Bearer ${token}`;
   const visitor = getVisitorId();
   if (visitor) h[VISITOR_HEADER] = visitor;

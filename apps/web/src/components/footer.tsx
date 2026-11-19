@@ -1,6 +1,6 @@
 import { ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { BRAND, SUPPORT_EMAIL } from '@/lib/config';
+import { BRAND, MVP, SUPPORT_EMAIL } from '@/lib/config';
 import { Logo } from './header';
 
 export function Footer() {
@@ -11,8 +11,9 @@ export function Footer() {
           <Logo />
           <p className="text-sm text-muted">Đề lập trình vào, Themis ra. Không cài đặt, không cấu hình.</p>
         </div>
-        <FooterColumn title="Sản phẩm" links={[['/', 'Chuyển đổi đề'], ['/pricing', 'Bảng giá'], ['/rewards', 'Kiếm credit'], ['/contact', 'Liên hệ cho trường học']]} />
-        <FooterColumn title="Tin cậy" links={[['/privacy', 'Chính sách quyền riêng tư'], ['/data-protection', 'Bảo vệ dữ liệu'], ['/terms', 'Điều khoản sử dụng']]} />
+        {/* GD-3: pricing, rewards, contact, terms and data protection are closed in the MVP. */}
+        <FooterColumn title="Sản phẩm" links={MVP ? [['/', 'Chuyển đổi đề']] : [['/', 'Chuyển đổi đề'], ['/pricing', 'Bảng giá'], ['/rewards', 'Kiếm credit'], ['/contact', 'Liên hệ cho trường học']]} />
+        <FooterColumn title="Tin cậy" links={MVP ? [['/privacy', 'Chính sách quyền riêng tư']] : [['/privacy', 'Chính sách quyền riêng tư'], ['/data-protection', 'Bảo vệ dữ liệu'], ['/terms', 'Điều khoản sử dụng']]} />
         <div className="space-y-3 text-sm">
           <p className="font-semibold">Hỗ trợ</p>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="block text-muted hover:text-ink">{SUPPORT_EMAIL}</a>

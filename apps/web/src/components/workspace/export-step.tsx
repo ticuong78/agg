@@ -4,6 +4,7 @@ import type { ConversionDto, ExportFormat, ExportFormatInfo } from '@agg/contrac
 import { CheckCircle2, Download, FileCode2, FileText, FileType2, Gift, Lock, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { MVP } from '@/lib/config';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/session';
 import { useTracking } from '@/lib/tracking';
@@ -68,7 +69,7 @@ export function ExportStep({ conversion, onSettings, onBack }: { conversion: Con
       {missingTests.length > 0 && (
         <p className="rounded-xl bg-warn/10 p-4 text-center text-sm text-warn">
           Bài {missingTests.map((p) => p.code).join(', ')} chưa có test: Themis cần test để chấm. Bạn vẫn tải được, rồi thêm test trong Themis,
-          hoặc <button className="font-medium underline" onClick={onBack}>quay lại bước Chỉnh sửa</button> để thêm tay hay dùng AI gợi ý.
+          hoặc <button className="font-medium underline" onClick={onBack}>quay lại bước Chỉnh sửa</button> {MVP ? 'để thêm test bằng tay.' : 'để thêm tay hay dùng AI gợi ý.'}
         </p>
       )}
 
@@ -81,6 +82,8 @@ export function ExportStep({ conversion, onSettings, onBack }: { conversion: Con
         </div>
       )}
 
+      {/* Empty in the MVP, which offers only the contest (GD-3). */}
+      {others.length > 0 && (
       <div>
         <p className="mb-3 text-center text-sm font-medium text-muted">Hoặc tải đề bài để in, chỉnh sửa</p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -100,8 +103,10 @@ export function ExportStep({ conversion, onSettings, onBack }: { conversion: Con
           })}
         </div>
       </div>
+      )}
 
-      {done && (user ? <SignedInNext /> : <GuestNext conversionId={conversion.id} onSaved={() => toast('ok', 'Đã lưu. Cảm ơn bạn!')} />)}
+      {/* GD-3: the lead form and the account offers are closed in the MVP; feedback comes with GD-6. */}
+      {done && !MVP && (user ? <SignedInNext /> : <GuestNext conversionId={conversion.id} onSaved={() => toast('ok', 'Đã lưu. Cảm ơn bạn!')} />)}
     </div>
   );
 }

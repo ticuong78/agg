@@ -2,10 +2,11 @@ import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/com
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { VISITOR_HEADER } from '@agg/contracts';
+import { isMvpMode } from '../../../shared/application/app-mode.js';
 import type { Requester } from '../../../shared/application/requester.js';
 import { DomainError } from '../../../shared/domain/domain-error.js';
 import { hashIp } from '../../../shared/infrastructure/ip-hash.js';
-import { ACCESS, type AccessLevel } from '../../../shared/presentation/decorators.js';
+import { ACCESS, MVP, type AccessLevel } from '../../../shared/presentation/decorators.js';
 import { Authenticator } from '../application/authenticator.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -17,6 +18,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 @Injectable()
 export class RequestGuard implements CanActivate {
   private readonly ipSecret: string;
+  private readonly mvp: boolean;
 
   constructor(
     private readonly reflector: Reflector,
@@ -24,11 +26,17 @@ export class RequestGuard implements CanActivate {
     config: ConfigService,
   ) {
     this.ipSecret = config.get<string>('IP_HASH_SECRET') || config.getOrThrow<string>('JWT_SECRET');
+    this.mvp = isMvpMode(config);
   }
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const level = this.reflector.getAllAndOverride<AccessLevel | undefined>(ACCESS, [ctx.getHandler(), ctx.getClass()]);
     if (!level) throw DomainError.forbidden('auth.route_not_declared', 'Đường dẫn này chưa được cấp quyền truy cập.');
+    // GD-3: in the MVP only routes marked @Mvp() exist. A 404 like a missing page rather than a 403; its code,
+    // `feature.off`, does tell a caller the route exists, which is accepted: the frontend code is public anyway.
+    if (this.mvp && !this.reflector.getAllAndOverride<boolean | undefined>(MVP, [ctx.getHandler(), ctx.getClass()])) {
+      throw DomainError.notFound('feature.off', 'Không tìm thấy trang.');
+    }
     if (level === 'webhook') return true;
 
     const req = ctx.switchToHttp().getRequest();
@@ -37,7 +45,9 @@ export class RequestGuard implements CanActivate {
     const ipHash = hashIp(req.ip, this.ipSecret);
 
     const header: string | undefined = req.headers.authorization;
-    const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+    // GD-3: the MVP has no accounts. A token issued before the switch must not bring back account limits or
+    // retention, so every caller is a guest and no token is even checked.
+    const token = !this.mvp && header?.startsWith('Bearer ') ? header.slice(7) : undefined;
     const account = token ? await this.authenticator.authenticate(token) : null;
 
     const requester: Requester = account

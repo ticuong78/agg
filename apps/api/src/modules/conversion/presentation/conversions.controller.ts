@@ -12,10 +12,10 @@ import { RateLimiter } from '../../../shared/application/rate-limiter.js';
 import { enforceRateLimit } from '../../../shared/application/rate-limit.js';
 import type { Requester, UserRequester } from '../../../shared/application/requester.js';
 import { DomainError } from '../../../shared/domain/domain-error.js';
-import { Access, CurrentRequester, CurrentUser, utf8Name } from '../../../shared/presentation/decorators.js';
+import { Access, CurrentRequester, CurrentUser, Mvp, utf8Name } from '../../../shared/presentation/decorators.js';
 import { AiEditingService } from '../application/ai-editing.service.js';
 import { ConversionService } from '../application/conversion.service.js';
-import { EXPORT_FORMATS, ExportService } from '../application/export.service.js';
+import { ExportService } from '../application/export.service.js';
 
 /** Hard ceiling of the HTTP layer; each tier's own (lower) limit is enforced by the application. */
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_MB ?? 50) * 1024 * 1024;
@@ -78,12 +78,12 @@ export class ConversionsController {
     private readonly limiter: RateLimiter,
   ) {}
 
-  @Get('formats')
+  @Get('formats') @Mvp()
   formats() {
-    return EXPORT_FORMATS;
+    return this.exports.formats();
   }
 
-  @Post()
+  @Post() @Mvp()
   @UseInterceptors(FilesInterceptor('files', MAX_UPLOAD_FILES, { limits: { fileSize: MAX_UPLOAD_BYTES } }))
   async upload(@CurrentRequester() requester: Requester, @UploadedFiles() files?: Express.Multer.File[]) {
     if (!files?.length) throw DomainError.validation('conversion.no_source', 'Hãy chọn ít nhất một tệp.');
@@ -91,7 +91,7 @@ export class ConversionsController {
     return this.conversions.createFromFiles(requester, files.map((f) => ({ name: utf8Name(f.originalname), buffer: f.buffer })));
   }
 
-  @Post('text')
+  @Post('text') @Mvp()
   async paste(@CurrentRequester() requester: Requester, @Body() body: PasteBody) {
     await this.limitUploads(requester);
     return this.conversions.createFromText(requester, body.text);
@@ -102,7 +102,7 @@ export class ConversionsController {
     return this.conversions.list(user);
   }
 
-  @Get(':id')
+  @Get(':id') @Mvp()
   get(@CurrentRequester() requester: Requester, @Param('id', ParseUUIDPipe) id: string, @Headers(ACCESS_KEY_HEADER) key?: string) {
     return this.conversions.get(requester, id, key ?? null);
   }
@@ -112,22 +112,22 @@ export class ConversionsController {
     return this.conversions.claim(user, id, key ?? null);
   }
 
-  @Delete(':id') @HttpCode(204)
+  @Delete(':id') @HttpCode(204) @Mvp()
   async remove(@CurrentRequester() requester: Requester, @Param('id', ParseUUIDPipe) id: string, @Headers(ACCESS_KEY_HEADER) key?: string) {
     await this.conversions.delete(requester, id, key ?? null);
   }
 
-  @Patch(':id/settings')
+  @Patch(':id/settings') @Mvp()
   settings(@CurrentRequester() r: Requester, @Param('id', ParseUUIDPipe) id: string, @Body() body: SettingsBody, @Headers(ACCESS_KEY_HEADER) key?: string) {
     return this.conversions.updateSettings(r, id, key ?? null, body);
   }
 
-  @Put(':id/order')
+  @Put(':id/order') @Mvp()
   reorder(@CurrentRequester() r: Requester, @Param('id', ParseUUIDPipe) id: string, @Body() body: OrderBody, @Headers(ACCESS_KEY_HEADER) key?: string) {
     return this.conversions.reorder(r, id, key ?? null, body.problemIds);
   }
 
-  @Patch(':id/problems/:problemId')
+  @Patch(':id/problems/:problemId') @Mvp()
   updateProblem(
     @CurrentRequester() r: Requester,
     @Param('id', ParseUUIDPipe) id: string,
@@ -138,7 +138,7 @@ export class ConversionsController {
     return this.conversions.updateProblem(r, id, key ?? null, problemId, body);
   }
 
-  @Delete(':id/problems/:problemId')
+  @Delete(':id/problems/:problemId') @Mvp()
   removeProblem(
     @CurrentRequester() r: Requester,
     @Param('id', ParseUUIDPipe) id: string,
@@ -172,7 +172,7 @@ export class ConversionsController {
     return this.ai.suggestTests(r, id, key ?? null, problemId, body);
   }
 
-  @Get(':id/export/:format')
+  @Get(':id/export/:format') @Mvp()
   async export(
     @CurrentRequester() r: Requester,
     @Param('id', ParseUUIDPipe) id: string,

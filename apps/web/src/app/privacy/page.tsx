@@ -2,7 +2,7 @@
 
 import { LegalPage, Section } from '@/components/legal';
 import { Button } from '@/components/ui';
-import { BRAND, SUPPORT_EMAIL } from '@/lib/config';
+import { BRAND, SUPPORT_EMAIL, MVP } from '@/lib/config';
 import { useTracking } from '@/lib/tracking';
 
 const TOC: [string, string][] = [
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section id="lien-he" title="9. Liên hệ">
-        <p>Mọi câu hỏi, yêu cầu về dữ liệu cá nhân: <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Xem thêm quyền của bạn tại trang <a className="underline" href="/data-protection#quyen">Bảo vệ dữ liệu</a>.</p>
+        <p>Mọi câu hỏi, yêu cầu về dữ liệu cá nhân: <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.{!MVP && <> Xem thêm quyền của bạn tại trang <a className="underline" href="/data-protection#quyen">Bảo vệ dữ liệu</a>.</>}</p>
       </Section>
     </LegalPage>
   );

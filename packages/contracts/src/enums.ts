@@ -15,6 +15,21 @@ export type ExtractionEngine = (typeof ExtractionEngines)[number];
 export const ExportFormats = ['contest', 'docx', 'doc', 'pdf', 'md'] as const;
 export type ExportFormat = (typeof ExportFormats)[number];
 
+/**
+ * GD-3: `mvp` (the default when unset) opens only the guest path, upload or paste, review, export to Themis; `full`
+ * opens everything. The API reads APP_MODE, the web NEXT_PUBLIC_APP_MODE; set them together.
+ */
+export const AppModes = ['mvp', 'full'] as const;
+export type AppMode = (typeof AppModes)[number];
+/** Turns a raw setting into a mode: unset means `mvp`; anything unknown is null, so the caller can refuse it. */
+export const parseAppMode = (raw: string | undefined | null): AppMode | null => {
+  const value = (raw ?? '').trim().toLowerCase();
+  if (!value) return 'mvp';
+  return (AppModes as readonly string[]).includes(value) ? (value as AppMode) : null;
+};
+/** The only export the MVP offers: statements travel inside the .contest; Word, PDF and Markdown are out. */
+export const MvpExportFormats: readonly ExportFormat[] = ['contest'];
+
 /** Themis reads tests from files named after the task (BAI1.INP / BAI1.OUT) or from standard input/output. */
 export const IoModes = ['FILE', 'STDIO'] as const;
 export type IoMode = (typeof IoModes)[number];
