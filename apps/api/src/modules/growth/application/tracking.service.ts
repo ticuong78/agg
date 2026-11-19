@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Retention } from '@agg/contracts';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
@@ -64,10 +65,10 @@ export class TrackingService {
     if (kept.length) await this.events.append(kept);
   }
 
-  /** Retention promised by the privacy policy: analytics and visitor records go after 24 months. */
+  /** Retention promised by the privacy policy (Retention.analyticsDays, GD-7): analytics and visitor records. */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async sweep(): Promise<void> {
-    const cutoff = new Date(Date.now() - 730 * 86_400_000);
+    const cutoff = new Date(Date.now() - Retention.analyticsDays * 86_400_000);
     await this.events.deleteOlderThan(cutoff);
     await this.visitors.deleteNotSeenSince(cutoff);
   }

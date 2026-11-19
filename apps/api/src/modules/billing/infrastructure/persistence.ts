@@ -246,4 +246,10 @@ export class TypeOrmDailyUsageRepository extends DailyUsageRepository {
   async count(key: string, day: string) {
     return (await this.repo.findOneBy({ key, day }))?.count ?? 0;
   }
+
+  async deleteBefore(day: string) {
+    // YYYY-MM-DD strings sort as dates, so one comparison finds every older day.
+    const result = await this.repo.createQueryBuilder().delete().where('day < :day', { day }).execute();
+    return result.affected ?? 0;
+  }
 }

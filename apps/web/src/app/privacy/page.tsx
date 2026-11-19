@@ -1,6 +1,7 @@
 'use client';
 
 import { LegalPage, Section } from '@/components/legal';
+import { MvpPrivacy } from '@/components/privacy-mvp';
 import { Button } from '@/components/ui';
 import { BRAND, SUPPORT_EMAIL, MVP } from '@/lib/config';
 import { useTracking } from '@/lib/tracking';
@@ -11,7 +12,12 @@ const TOC: [string, string][] = [
   ['tiep-thi', 'Liên hệ tiếp thị'], ['tre-em', 'Học sinh và trẻ em'], ['lien-he', 'Liên hệ'],
 ];
 
+/** GD-7: the MVP has its own short page; this one describes the full product (accounts, credit, AI). */
 export default function PrivacyPage() {
+  return MVP ? <MvpPrivacy /> : <FullPrivacy />;
+}
+
+function FullPrivacy() {
   const { consent, decide } = useTracking();
   return (
     <LegalPage
@@ -107,7 +113,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section id="lien-he" title="9. Liên hệ">
-        <p>Mọi câu hỏi, yêu cầu về dữ liệu cá nhân: <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.{!MVP && <> Xem thêm quyền của bạn tại trang <a className="underline" href="/data-protection#quyen">Bảo vệ dữ liệu</a>.</>}</p>
+        <p>Mọi câu hỏi, yêu cầu về dữ liệu cá nhân: <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Xem thêm quyền của bạn tại trang <a className="underline" href="/data-protection#quyen">Bảo vệ dữ liệu</a>.</p>
       </Section>
     </LegalPage>
   );

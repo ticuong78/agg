@@ -227,3 +227,24 @@ export const MAX_REFERRALS_PER_MONTH = 20;
 export const FEEDBACK_COOLDOWN_DAYS = 30;
 
 export const formatVnd = (amount: number): string => `${amount.toLocaleString('vi-VN')}đ`;
+
+/**
+ * GD-7: how long the MVP keeps each kind of data. The privacy page, the cleanup jobs, the web and a test that reads
+ * deploy/backup.sh and deploy/docker-compose.yml all use these values, so the page cannot promise what the code
+ * does not do.
+ */
+export const Retention = {
+  /** A guest's set (exam text, file names): the guest plan's retention, swept hourly. */
+  guestSetHours: TierCatalog.GUEST.limits.retentionDays * 24,
+  /** Daily allowance counters (browser id, hashed IP): only today's is needed; older ones are deleted daily. */
+  usageCounterDays: 2,
+  /** Anonymous product events (problem count, export format; no id): deleted daily after this. */
+  analyticsDays: 730,
+  /** Access keys kept in the guest's browser, pruned after this (longer than a set lives, never shorter). */
+  browserKeyHours: 48,
+  /** Nightly database backups are deleted after this; guest sets and counters are left out of them. */
+  backupDays: 14,
+  /** Container logs are rotated by size: this many files of this size per service, then overwritten. */
+  logFiles: 3,
+  logFileMb: 10,
+} as const;

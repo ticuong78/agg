@@ -46,4 +46,6 @@ export abstract class DailyUsageRepository {
   /** Increments every key for `day` unless one of them already reached its limit; returns whether it counted. */
   abstract incrementIfBelow(counters: { key: string; limit: number }[], day: string): Promise<boolean>;
   abstract count(key: string, day: string): Promise<number>;
+  /** Deletes every counter of a day before `day` (YYYY-MM-DD); returns how many (GD-7 retention). */
+  abstract deleteBefore(day: string): Promise<number>;
 }

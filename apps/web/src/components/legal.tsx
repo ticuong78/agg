@@ -13,8 +13,8 @@ const PAGES: readonly (readonly [string, string])[] = MVP
       ['/terms', 'Điều khoản'],
     ];
 
-export function LegalPage({ title, intro, current, toc, children }: {
-  title: string; intro: ReactNode; current: string; toc: [string, string][]; children: ReactNode;
+export function LegalPage({ title, intro, current, toc, children, updated = LEGAL_UPDATED }: {
+  title: string; intro: ReactNode; current: string; toc: [string, string][]; children: ReactNode; updated?: string;
 }) {
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 lg:grid-cols-[220px_1fr]">
@@ -30,7 +30,7 @@ export function LegalPage({ title, intro, current, toc, children }: {
       </aside>
       <article className="max-w-3xl">
         <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
-        <p className="mt-2 text-sm text-muted">Cập nhật lần cuối: {LEGAL_UPDATED}</p>
+        <p className="mt-2 text-sm text-muted">Cập nhật lần cuối: {updated}</p>
         <div className="mt-6 rounded-2xl bg-canvas p-5 text-[15px] leading-relaxed">{intro}</div>
         <div className="legal mt-10 space-y-10 text-[15px] leading-relaxed [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-3 [&_table]:w-full [&_td]:border [&_td]:border-line [&_td]:p-2 [&_td]:align-top [&_th]:border [&_th]:border-line [&_th]:bg-canvas [&_th]:p-2 [&_th]:text-left [&_ul]:mb-3 [&_ul]:space-y-1">
           {children}

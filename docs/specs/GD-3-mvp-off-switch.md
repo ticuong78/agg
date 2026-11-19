@@ -122,7 +122,7 @@ All five were found in implementation or review. Htet approved them with "Yes, f
 
 ## Measures (filled when done)
 
-- Elapsed: about 40 minutes from approval (19 Nov 11:10 UTC) to the first report of done (about 11:44 UTC), plus about 10 minutes of fixes after review. Merge is still to come.
+- Elapsed: about 40 minutes from approval (19 Nov 11:10 UTC) to the first report of done (about 11:44 UTC), plus about 10 minutes of fixes after review. Merged as PR #6 at 12:00 UTC: about 50 minutes from approval to merge. The `verify` run on `main` passed: 48/48 unit tests, 14/14 integration tests.
 - Review findings before reporting done, after one round:
   - `reviewer`: 2 blocking, 7 should fix and 11 nits.
   - `security-verifier`: no High or Medium; 4 Low and 2 test gaps.

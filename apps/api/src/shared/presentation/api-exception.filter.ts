@@ -50,7 +50,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
         message: statusCode === 413 ? 'Tệp quá lớn so với giới hạn của gói.' : Array.isArray(raw) ? raw.join('; ') : (raw ?? exception.message),
       };
     } else {
-      this.logger.error(exception);
+      // Name, message and stack only, never the object: a failed query carries its parameters (exam text, browser
+      // id, hashed IP) as properties, and the logger would print them all (GD-7: the privacy page promises otherwise).
+      this.logger.error(exception instanceof Error ? `${exception.name}: ${exception.message}` : 'Non-error thrown', exception instanceof Error ? exception.stack : undefined);
       body = { statusCode: 500, code: 'server.error', message: 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại.' };
     }
     res.status(body.statusCode).json(body);

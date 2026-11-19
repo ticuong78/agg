@@ -2,7 +2,7 @@ import { FileDown, FileUp, ShieldCheck, Sparkles, TestTube2, Wand2 } from 'lucid
 import Link from 'next/link';
 import { Uploader } from '@/components/uploader';
 import { ButtonLink } from '@/components/ui';
-import { TierCatalog } from '@agg/contracts';
+import { Retention } from '@agg/contracts';
 import { MVP } from '@/lib/config';
 
 // GD-3: the MVP has no AI, scans or statement exports, so its page promises only what it does.
@@ -17,7 +17,7 @@ const MVP_FEATURES = [
   { icon: TestTube2, title: 'Test từ ví dụ', text: 'Ví dụ trong đề thành test; bạn thêm test bằng tay khi cần.' },
   { icon: Sparkles, title: 'Không dùng AI', text: 'Đề được tách bằng quy tắc, không gửi cho dịch vụ AI nào.' },
   // The retention period comes from plans.ts, the only home of limits (CLAUDE.md).
-  { icon: ShieldCheck, title: 'Tệp gốc không bị lưu', text: `Đọc xong là xoá. Kết quả tự xoá sau ${TierCatalog.GUEST.limits.retentionDays * 24} giờ.` },
+  { icon: ShieldCheck, title: 'Tệp gốc không bị lưu', text: `Đọc xong là xoá. Kết quả tự xoá sau ${Retention.guestSetHours} giờ.` },
 ];
 
 const FULL_STEPS = [
@@ -32,7 +32,7 @@ const FULL_FEATURES = [
   { icon: Sparkles, title: 'Đọc được cả đề scan', text: 'Ảnh chụp, PDF scan, công thức Word: AI đọc như người.' },
   { icon: Wand2, title: 'Viết lại từng mục', text: 'Đề bài, dữ liệu vào, kết quả, ràng buộc rõ ràng hơn trong một cú nhấp.' },
   { icon: TestTube2, title: 'Gợi ý test có kiểm chứng', text: 'Test biên, test đặc biệt; kết quả được tính bằng cách chạy code thật.' },
-  { icon: ShieldCheck, title: 'Tệp gốc không bị lưu', text: 'Đọc xong là xoá. Kết quả của khách tự xoá sau 24 giờ.' },
+  { icon: ShieldCheck, title: 'Tệp gốc không bị lưu', text: `Đọc xong là xoá. Kết quả của khách tự xoá sau ${Retention.guestSetHours} giờ.` },
 ];
 
 const FEATURES = MVP ? MVP_FEATURES : FULL_FEATURES;

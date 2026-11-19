@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Button, ButtonLink, cx, Spinner } from '@/components/ui';
 import { useApiError } from '@/components/upgrade';
 import { ExportStep } from '@/components/workspace/export-step';
+import { DeleteSet } from '@/components/workspace/delete-set';
 import { ProblemEditor } from '@/components/workspace/problem-editor';
 import { SettingsDialog } from '@/components/workspace/settings-dialog';
 import { Stepper } from '@/components/workspace/stepper';
@@ -113,6 +114,8 @@ export default function ConversionPage() {
         <h1 className="mt-4 text-2xl font-bold">Chưa xử lý được tài liệu</h1>
         <p className="mt-2 text-muted">{conversion.failure}</p>
         <Button className="mt-6" onClick={() => router.push('/')}>Thử lại với tệp khác</Button>
+        {/* A failed set still holds its file names until it expires (GD-7). */}
+        <div className="mt-4"><DeleteSet conversionId={conversion.id} /></div>
       </div>
     );
   }
@@ -124,7 +127,10 @@ export default function ConversionPage() {
       <Stepper current={step} onSelect={setStep} />
 
       {step === 2 ? (
-        <div className="mt-10"><ExportStep conversion={conversion} onSettings={setConversion} onBack={() => setStep(1)} /></div>
+        <div className="mt-10">
+          <ExportStep conversion={conversion} onSettings={setConversion} onBack={() => setStep(1)} />
+          <div className="mt-8 text-center"><DeleteSet conversionId={conversion.id} /></div>
+        </div>
       ) : (
         <div className="mx-auto mt-8 grid max-w-6xl gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
@@ -152,6 +158,7 @@ export default function ConversionPage() {
               ))}
             </ol>
             <p className="text-xs text-muted">Lưu đến {new Date(conversion.expiresAt).toLocaleString('vi-VN')}. <Link href="/privacy#luu-tru" className="underline">Vì sao?</Link></p>
+            <DeleteSet conversionId={conversion.id} />
           </aside>
 
           <section>
