@@ -124,7 +124,7 @@ No product tests. The scan has its own regression harness, `.github/scripts/secr
 
 ## Measures (filled when done)
 
-- Elapsed: about 41.5 h, from approval (17 Nov 13:35 UTC) to the end of implementation (19 Nov 07:50 UTC). Waiting for GD-2 to merge took most of it. The merge is still to come.
+- Elapsed: about 45 h, from approval (17 Nov 13:35 UTC) to the merge of PR #4 (19 Nov 10:41 UTC). The wait for GD-2 to merge took most of it. PR #4 took 6 minutes from opening to merge.
 - Review findings, in order:
   - Second spec review: 0 blocking, 17 should fix and 8 nits (the Amendment).
   - Settings review on 18 Nov: 3 should fix.
@@ -133,14 +133,17 @@ No product tests. The scan has its own regression harness, `.github/scripts/secr
   - Second senior review: 2 nits. The macOS case limit was recorded; shellcheck and actionlint were run.
   - Lint: shellcheck and actionlint, 0 findings.
   - Third senior review: 1 should fix, these Measures, now fixed.
-- Escaped defects: 4, all found by Htet's review requests after the assistant reported GD-9 ready, all fixed before merge.
+  - Full re-check, at Htet's request: 0 findings. The ask rules were confirmed, and the binary-only count was covered.
+  - Fourth senior review (maintainability): 1 should fix. The fixture harness was not in the repository, and is now added (deviation 6).
+- Escaped defects: 5, all found by Htet's review requests after the assistant reported GD-9 ready, all fixed before merge.
   - `git archive` obeyed the PR's `export-ignore`, so a file could be hidden from the tree pass.
   - The playbook's version check was not recorded.
   - The Verification was stale (`test:integration` was not re-run).
   - These Measures counted no escaped defects, against the template rule this same PR adds.
+  - No regression test was committed for the scan: the fixture harness lived only in the assistant's scratchpad.
 
   The local fixture runs also caught two of the assistant's own bugs before any report of done (not escaped): the commit-message pipe lost its failure, and a plain `rev-list` count false-failed delete-only commits.
-- Htet's attention: about 50 minutes, estimated: approval, the amendment, three deviation decisions (the harness included), seven fixture, harness and mutant run approvals, six review and check requests, the lint approval, the ask-prompt check, and the final approval.
+- Htet's attention: about 60 minutes, estimated. It covered approval, the amendment, three deviation decisions, eight run approvals (fixtures, the harness, the mutants), seven review and check requests, the lint approval, the ask-prompt check, and two merges' worth of git.
 - Deviations: 6, all asked before and approved (see Deviations above).
 - Rule breaches: none. Each throwaway-repo run that used refused git verbs was asked for and approved first.
 
@@ -185,7 +188,9 @@ No product tests. The scan has its own regression harness, `.github/scripts/secr
   - `Secret scan tests` ran because this PR changes `.github/scripts/`: 29 of 29 cases as expected, in about 11 s on the runner.
   - `pr-text` passed in 18 s (run 44507018899): the title and description were clean, and the title passed commitlint.
   - GitGuardian passed.
-  - Not yet seen: a push run on `main` (on merge), and `pr-text` re-running on an edit.
+  - Push run on `main` after the merge (run 44507895945): passed. `Secrets` scanned the pushed range, 3 commits with the merge, all clean. `Secret scan tests` passed 29 of 29.
+  - The PR was merged with a merge commit, not a squash: the admin settings in playbook section 12 are still not set.
+  - Not yet seen: `pr-text` re-running on an edit.
 
 - **Settings review (18 Nov), fixed:**
   - Key files are refused for reading. `CLAUDE.md` rule 6 covers keys, but only `.env` files were denied before. The new rules cover `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa*`, `id_ed25519*` and `.env.staging`, for both Read and Bash. A Read of `probe.pem` is refused, and `.env.example` still reads.
