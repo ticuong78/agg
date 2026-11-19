@@ -1,6 +1,6 @@
 # GD-2: CI on every pull request and push to main
 
-Status: approved (Htet Oo Naing, 2026-11-17)
+Status: done (approved by Htet Oo Naing 2026-11-17; first green run on PR #3, 2026-11-19)
 Owner: Htet Oo Naing
 Risky area: yes. **This changes CI** (`.github/workflows/**`, playbook section 8), and the playbook's enforcement labels change with it.
 MVP: in (prerequisite: every later step relies on the gate running remotely, not only on a hook that can be skipped)
@@ -34,7 +34,7 @@ Out:
 
 ## Done when
 
-- [ ] On a PR, the `verify` check runs every step above and passes on the GD-2 branch itself.
+- [x] On a PR, the `verify` check runs every step above and passes on the GD-2 branch itself.
 - [x] The check fails, visibly on the PR, when (a) a test fails, (b) an entity changes without a migration, (c) a commit message or the PR title breaks Conventional Commits. Shown by running each failure locally the way CI runs it (below), not by pushing broken commits.
 - [x] Every `uses:` line is a 40-character SHA with its tag in a comment; `permissions` is `contents: read`.
 - [x] The same steps run locally in a clean `node:24` container against the throwaway Postgres, with `CI=true`, and pass (`HUSKY=0` left out locally, see Verification).
@@ -92,4 +92,11 @@ No new test files: CI runs the existing suites (`pnpm test`: 35 tests; `pnpm tes
   - pnpm comes from `pnpm/action-setup`, not corepack. The first PR run tests this. The fallback is `version: 12.17.0` or running `setup-node` first.
   - An `edited` event on the PR description re-runs the job. GD-9 C covers it.
 - **Not done, recorded:** the Postgres image follows its tag, not a digest (a test database should get patches); `packageManager` has no `+sha512` hash; a stale `unrs-resolver` entry in `pnpm-workspace.yaml`'s build allowlist (pre-existing).
-- **Still to check:** the first run on the GD-2 PR (the first done-when item); then set the status to `done`.
+- **First run on GitHub** (PR #3, run 44474519577, 2026-11-19): `verify` passed in 54 s, and every step ran.
+  - `pnpm/action-setup` v6.1.1 installed pnpm v12.17.0 from `packageManager`, so no fallback was needed.
+  - Install used the lockfile as is.
+  - commitlint found 0 problems in both checks: the PR's commits, and the title with " (#3)".
+  - `pnpm test` passed 35/35, and `pnpm test:integration` passed 8/8 against the service on the new TCP health check.
+  - `migration:run` applied the baseline to the empty service database. `migration:check` then found "No changes". `migrate.ts` prints "up to date" after applying, whatever was applied.
+  - GitGuardian passed.
+  - The concurrency group for pushes to `main` is first exercised on the merge.
